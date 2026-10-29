@@ -20,7 +20,7 @@ import { useErrorMessage } from "@/lib/use-error-message";
 import { AuditDetail } from "./audit-detail";
 
 const PAGE_SIZE = 25;
-const ENTITY_TYPES = ["staff", "staff_session", "workspace", "channel_account", "file", "plan"] as const;
+const ENTITY_TYPES = ["staff", "staff_session", "workspace", "membership", "invitation", "channel_account", "file", "plan", "data_deletion_request"] as const;
 const TEXT_FILTERS = ["actor", "action", "entityType", "workspaceId", "from", "to"] as const;
 type Filters = Record<(typeof TEXT_FILTERS)[number], string>;
 

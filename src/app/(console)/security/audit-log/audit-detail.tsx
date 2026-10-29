@@ -25,6 +25,12 @@ export function AuditDetail({ entry, onClose }: { entry: AuditEntry | null; onCl
             <dd>
               <span className="ltr">{entry.actorName}</span> ({t(`actorTypes.${entry.actorType}`)})
             </dd>
+            {entry.onBehalfOf ? (
+              <>
+                <dt className="text-muted-foreground">{t("detail.onBehalfOf")}</dt>
+                <dd className="ltr text-start font-mono text-xs break-all">{entry.onBehalfOf}</dd>
+              </>
+            ) : null}
             <dt className="text-muted-foreground">{t("columns.action")}</dt>
             <dd className="ltr text-start font-mono text-xs">{entry.action}</dd>
             <dt className="text-muted-foreground">{t("detail.entityId")}</dt>

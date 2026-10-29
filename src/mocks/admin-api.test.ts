@@ -22,6 +22,16 @@ describe("mock AdminApi", () => {
     expect((await ok.json()).status).toBe("ok");
   });
 
+  it("shows Support only workspace-scoped audit entries", async () => {
+    const login = async (username: string) =>
+      (await (await call("POST", "/admin/v1/auth/login", { username, password: "Pishkhan-admin-1234", totpCode: "123456" })).json()).accessToken as string;
+    const all = await (await call("GET", "/admin/v1/audit?pageSize=100", undefined, await login("superadmin"))).json();
+    const support = await (await call("GET", "/admin/v1/audit?pageSize=100", undefined, await login("support"))).json();
+    expect(all.items.some((e: { workspaceId: string | null }) => e.workspaceId === null)).toBe(true);
+    expect(support.totalCount).toBeGreaterThan(0);
+    expect(support.items.every((e: { workspaceId: string | null }) => e.workspaceId !== null)).toBe(true);
+  });
+
   it("requires a step-up token to create staff and detects refresh token reuse", async () => {
     const login = await (await call("POST", "/admin/v1/auth/login", { username: "superadmin", password: "Pishkhan-admin-1234", totpCode: "123456" })).json();
     const denied = await call("POST", "/admin/v1/staff", { username: "new.one", password: "x".repeat(14), roles: ["Support"] }, login.accessToken);

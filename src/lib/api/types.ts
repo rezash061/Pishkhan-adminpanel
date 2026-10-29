@@ -1,5 +1,4 @@
 // DTOs of the AdminApi (backend/openapi/admin.v1.json in rezash061/pishkhan-backend).
-// Types marked "proposed" are not in the backend yet; see docs/backend-requests.md.
 
 export interface StaffSummary {
   id: string;
@@ -21,13 +20,15 @@ export interface HealthReport {
   checks: Record<string, { status: string; ms: number }>;
 }
 
-/** Proposed: `GET /admin/v1/audit`. */
+/** `GET /admin/v1/audit`. Support staff only receive workspace-scoped entries. */
 export interface AuditEntry {
   id: string;
   occurredAt: string;
   actorType: "staff" | "user" | "system";
   actorId: string | null;
   actorName: string;
+  /** Set when a staff member acted while impersonating this user. */
+  onBehalfOf: string | null;
   workspaceId: string | null;
   action: string;
   entityType: string;
