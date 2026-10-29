@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Tokens follow the public website (rezash061/pishkhan-web app/globals.css): same brand violet, accent and semantic colors. */
+@theme {
+  --font-sans: var(--font-vazirmatn), ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #f3f1ff;
+  --color-brand-200: #d4ccff;
+  --color-brand-500: #7146f6;
+  --color-brand-600: #5f2ceb;
+  --color-brand-700: #4f1fcf;
+  --color-brand-950: #210d5c;
+  --color-accent-500: #f8486b;
+
+  --color-background: #fcfbff;
+  --color-surface: #ffffff;
+  --color-foreground: #17142b;
+  --color-muted: #f5f3fb;
+  --color-muted-foreground: #5d5873;
+  --color-border: #e7e4f0;
+  --color-ring: #7146f6;
+  --color-primary: #5f2ceb;
+  --color-primary-foreground: #ffffff;
+  --color-danger: #c4253f;
+  --color-success: #12805c;
+  --color-warning: #d68a00;
+  --color-warning-foreground: #7a4d00;
+  --color-sidebar: #210d5c;
+  --color-sidebar-foreground: #f1effa;
+  --color-sidebar-muted: #b4a5ff;
+  --color-sidebar-active: #381a88;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-background: #0e0c1a;
+    --color-surface: #16132a;
+    --color-foreground: #f1effa;
+    --color-muted: #1d1935;
+    --color-muted-foreground: #a8a3c0;
+    --color-border: #2c2747;
+    --color-ring: #9073fc;
+    --color-primary: #9073fc;
+    --color-primary-foreground: #0e0c1a;
+    --color-danger: #ff7088;
+    --color-success: #46c79b;
+    --color-warning: #f0b44c;
+    --color-warning-foreground: #f0b44c;
+    --color-sidebar: #0b0916;
+    --color-sidebar-active: #2c2747;
+    color-scheme: dark;
+  }
+}
+
+html,
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+body {
+  font-feature-settings: "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Numbers, codes and identifiers stay left-to-right inside the RTL layout. */
+.ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
