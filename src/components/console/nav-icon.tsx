@@ -1,0 +1,9 @@
+import { Activity, House, ScrollText, Settings, UsersRound, type LucideProps } from "lucide-react";
+import type { NavIcon as NavIconName } from "@/lib/permissions";
+
+const icons = { home: House, staff: UsersRound, audit: ScrollText, health: Activity, settings: Settings } as const;
+
+export function NavIcon({ name, ...props }: { name: NavIconName } & LucideProps) {
+  const Icon = icons[name];
+  return <Icon aria-hidden {...props} />;
+}

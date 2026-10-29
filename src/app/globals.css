@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  --font-sans: var(--font-vazirmatn), ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: oklch(0.985 0.002 250);
+  --color-surface: oklch(1 0 0);
+  --color-foreground: oklch(0.22 0.02 260);
+  --color-muted: oklch(0.955 0.005 250);
+  --color-muted-foreground: oklch(0.5 0.02 260);
+  --color-border: oklch(0.9 0.008 250);
+  --color-ring: oklch(0.55 0.17 262);
+  --color-primary: oklch(0.5 0.17 262);
+  --color-primary-foreground: oklch(0.99 0 0);
+  --color-danger: oklch(0.55 0.2 27);
+  --color-success: oklch(0.55 0.13 155);
+  --color-warning: oklch(0.78 0.15 80);
+  --color-warning-foreground: oklch(0.42 0.1 70);
+  --color-sidebar: oklch(0.24 0.03 262);
+  --color-sidebar-foreground: oklch(0.93 0.01 260);
+  --color-sidebar-muted: oklch(0.7 0.02 260);
+  --color-sidebar-active: oklch(0.32 0.05 262);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-background: oklch(0.17 0.01 260);
+    --color-surface: oklch(0.21 0.012 260);
+    --color-foreground: oklch(0.93 0.01 260);
+    --color-muted: oklch(0.26 0.012 260);
+    --color-muted-foreground: oklch(0.7 0.015 260);
+    --color-border: oklch(0.32 0.012 260);
+    --color-primary: oklch(0.68 0.15 262);
+    --color-primary-foreground: oklch(0.15 0.02 262);
+    --color-sidebar: oklch(0.14 0.015 262);
+    --color-sidebar-active: oklch(0.25 0.04 262);
+    --color-warning-foreground: oklch(0.85 0.12 80);
+  }
+}
+
+html,
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+body {
+  font-feature-settings: "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Numbers, codes and identifiers stay left-to-right inside the RTL layout. */
+.ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
