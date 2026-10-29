@@ -29,6 +29,7 @@ export const auditFixtures: AuditEntry[] = Array.from({ length: 64 }, (_, i) => 
     actorType: actor.type,
     actorId: actor.id,
     actorName: actor.name,
+    onBehalfOf: null,
     workspaceId: event.entityType === "staff" || event.entityType === "staff_session" ? null : (workspaces[i % workspaces.length] ?? null),
     action: event.action,
     entityType: event.entityType,

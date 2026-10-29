@@ -1,6 +1,6 @@
 // In-process stand-in for the AdminApi host, used when ADMIN_API_URL=mock (local development without the
 // .NET stack, and the Playwright suite). It mirrors backend/openapi/admin.v1.json: same paths, DTOs, status
-// codes and problem codes. `/admin/v1/audit` is the proposed contract in docs/backend-requests.md.
+// codes and problem codes.
 // Fixtures are fake. Every mock password is "Pishkhan-admin-1234" and the TOTP code is always 123456.
 
 import { auditFixtures } from "./fixtures";
@@ -202,6 +202,8 @@ export async function handleMockRequest(request: Request): Promise<Response> {
 
     case "GET /admin/v1/audit": {
       if (!caller.user.roles.some((r) => r === "SuperAdmin" || r === "Support")) return problem(403, "auth.forbidden");
+      // Like the backend, Support only sees entries that belong to a workspace.
+      const supportOnly = !isSuperAdmin(caller);
       const q = url.searchParams;
       const text = (k: string) => q.get(k)?.trim().toLowerCase() || null;
       const [actor, action, entity, workspaceId] = [text("actor"), text("action"), text("entityType"), text("workspaceId")];
@@ -211,6 +213,7 @@ export async function handleMockRequest(request: Request): Promise<Response> {
       const pageSize = Math.min(100, Math.max(1, Number(q.get("pageSize") ?? 25)));
       const filtered = auditFixtures.filter(
         (e) =>
+          (!supportOnly || e.workspaceId !== null) &&
           (!actor || e.actorName.toLowerCase().includes(actor)) &&
           (!action || e.action.toLowerCase().includes(action)) &&
           (!entity || e.entityType.toLowerCase() === entity) &&

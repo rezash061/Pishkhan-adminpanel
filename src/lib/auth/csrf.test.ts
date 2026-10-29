@@ -16,7 +16,8 @@ describe("checkMutation", () => {
 
   it("rejects cross-origin, missing origin and token mismatch", () => {
     expect(checkMutation(req("POST", { ...ok, origin: "http://evil.test" }))).toBe("csrf.origin_mismatch");
-    const { origin: _origin, ...noOrigin } = ok;
+    const noOrigin: Record<string, string> = { ...ok };
+    delete noOrigin.origin;
     expect(checkMutation(req("POST", noOrigin))).toBe("csrf.origin_missing");
     expect(checkMutation(req("POST", { ...ok, "x-csrf-token": "abd" }))).toBe("csrf.token_mismatch");
   });

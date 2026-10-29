@@ -1,23 +1,24 @@
 # AdminApi requests from the admin panel
 
 The admin panel is built against the real AdminApi contract in
-`rezash061/pishkhan-backend` (`backend/openapi/admin.v1.json`). At the time of writing that contract covers
-staff sign-in, TOTP enrollment, refresh, logout, step-up, `/me` and staff list/create. Everything else the
-admin plan (`02-admin-panel.md`) needs is part of backend work package **BE-1.12 Backoffice APIs v1**.
+`rezash061/pishkhan-backend` (`backend/openapi/admin.v1.json`). It covers staff sign-in, TOTP enrollment, refresh,
+logout, step-up, `/me`, staff list/create and (backend PR #10) the audit log. Everything else the admin plan
+(`02-admin-panel.md`) needs is part of backend work package **BE-1.12 Backoffice APIs v1**.
 
 This file lists what the panel needs next, in the order the pages are built. Where the panel already calls an
 endpoint that does not exist yet, it is marked **called today**: the page shows a "not implemented yet" notice
 on `404` and works against the mock (`ADMIN_API_URL=mock`, see `src/mocks/admin-api.ts`).
 
-## 1. Audit log — called today
+## 1. Audit log — done (backend PR #10)
 
-`GET /admin/v1/audit` — roles: SuperAdmin, Support (Support limited to workspace-scoped entries).
+`GET /admin/v1/audit` — roles: SuperAdmin, Support (Support limited to workspace-scoped entries). The backend
+also returns `onBehalfOf` (the user a staff member was impersonating), which the detail view shows.
 
 | Query | Meaning |
 |---|---|
 | `actor` | Substring of the actor's display name (staff username, masked user phone) |
 | `action` | Substring of the action key, for example `staff.create` |
-| `entityType` | Exact entity type: `staff`, `staff_session`, `workspace`, `channel_account`, `file`, `plan`, … |
+| `entityType` | Exact entity type: `staff`, `staff_session`, `workspace`, `membership`, `invitation`, `data_deletion_request`, … |
 | `workspaceId` | Exact workspace id |
 | `from`, `to` | ISO 8601 UTC instants (the panel converts Jalali input to Tehran day boundaries) |
 | `page`, `pageSize` | 1-based page, page size ≤ 100 |
@@ -80,10 +81,8 @@ alerts, as listed in `02-admin-panel.md` section 4. List endpoints should use `p
 - **Step-up** failures are `403` with `title`/`code` `auth.step_up.required` (the plan said `401`); the panel follows
   the backend. A step-up token is a full access token with a `step_up_at` claim, valid 5 minutes; the BFF keeps it
   in its own HttpOnly cookie and prefers it while it is valid.
-- **Sign-in is one request** with username, password and TOTP code. The backend counts a sign-in without a TOTP
-  code as a failed attempt (`RecordFailure` before returning `auth.totp.required`), so a two-step form that first
-  posts only the password would push staff towards the 5-failure lockout. The panel therefore asks for all three
-  fields at once and leaves the code empty only on first sign-in. If a two-step form is wanted later, the backend
-  should not record a failure when the password is right and the code is simply missing.
+- **Sign-in is one request** with username, password and TOTP code (empty only on first sign-in). Since backend
+  PR #10 a sign-in with the right password and no code no longer counts as a failed attempt, so a two-step form
+  would also be safe now; the single form stays because it needs one round trip.
 - **Problem details** carry the error key in both `title` and the `code` extension; the panel translates keys via
   `src/messages/fa.json` (`errors.*`) and field errors via `errors` (`field → [keys]`).
