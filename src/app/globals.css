@@ -2,41 +2,55 @@
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
+/* Tokens follow the public website (rezash061/pishkhan-web app/globals.css): same brand violet, accent and semantic colors. */
 @theme {
   --font-sans: var(--font-vazirmatn), ui-sans-serif, system-ui, sans-serif;
 
-  --color-background: oklch(0.985 0.002 250);
-  --color-surface: oklch(1 0 0);
-  --color-foreground: oklch(0.22 0.02 260);
-  --color-muted: oklch(0.955 0.005 250);
-  --color-muted-foreground: oklch(0.5 0.02 260);
-  --color-border: oklch(0.9 0.008 250);
-  --color-ring: oklch(0.55 0.17 262);
-  --color-primary: oklch(0.5 0.17 262);
-  --color-primary-foreground: oklch(0.99 0 0);
-  --color-danger: oklch(0.55 0.2 27);
-  --color-success: oklch(0.55 0.13 155);
-  --color-warning: oklch(0.78 0.15 80);
-  --color-warning-foreground: oklch(0.42 0.1 70);
-  --color-sidebar: oklch(0.24 0.03 262);
-  --color-sidebar-foreground: oklch(0.93 0.01 260);
-  --color-sidebar-muted: oklch(0.7 0.02 260);
-  --color-sidebar-active: oklch(0.32 0.05 262);
+  --color-brand-50: #f3f1ff;
+  --color-brand-200: #d4ccff;
+  --color-brand-500: #7146f6;
+  --color-brand-600: #5f2ceb;
+  --color-brand-700: #4f1fcf;
+  --color-brand-950: #210d5c;
+  --color-accent-500: #f8486b;
+
+  --color-background: #fcfbff;
+  --color-surface: #ffffff;
+  --color-foreground: #17142b;
+  --color-muted: #f5f3fb;
+  --color-muted-foreground: #5d5873;
+  --color-border: #e7e4f0;
+  --color-ring: #7146f6;
+  --color-primary: #5f2ceb;
+  --color-primary-foreground: #ffffff;
+  --color-danger: #c4253f;
+  --color-success: #12805c;
+  --color-warning: #d68a00;
+  --color-warning-foreground: #9a6200;
+  --color-sidebar: #210d5c;
+  --color-sidebar-foreground: #f1effa;
+  --color-sidebar-muted: #b4a5ff;
+  --color-sidebar-active: #381a88;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --color-background: oklch(0.17 0.01 260);
-    --color-surface: oklch(0.21 0.012 260);
-    --color-foreground: oklch(0.93 0.01 260);
-    --color-muted: oklch(0.26 0.012 260);
-    --color-muted-foreground: oklch(0.7 0.015 260);
-    --color-border: oklch(0.32 0.012 260);
-    --color-primary: oklch(0.68 0.15 262);
-    --color-primary-foreground: oklch(0.15 0.02 262);
-    --color-sidebar: oklch(0.14 0.015 262);
-    --color-sidebar-active: oklch(0.25 0.04 262);
-    --color-warning-foreground: oklch(0.85 0.12 80);
+    --color-background: #0e0c1a;
+    --color-surface: #16132a;
+    --color-foreground: #f1effa;
+    --color-muted: #1d1935;
+    --color-muted-foreground: #a8a3c0;
+    --color-border: #2c2747;
+    --color-ring: #9073fc;
+    --color-primary: #9073fc;
+    --color-primary-foreground: #0e0c1a;
+    --color-danger: #ff7088;
+    --color-success: #46c79b;
+    --color-warning: #f0b44c;
+    --color-warning-foreground: #f0b44c;
+    --color-sidebar: #0b0916;
+    --color-sidebar-active: #2c2747;
+    color-scheme: dark;
   }
 }
 
