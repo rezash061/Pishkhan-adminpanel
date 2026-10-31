@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased — plans
+
+- Plans page (`/billing/plans`, SuperAdmin, Finance, Support, ReadOnly) from `GET /admin/v1/plans` (backend PR #22):
+  each plan code with its version on sale, its open draft, flags and version count. New "Billing" sidebar section.
+- Plan editor: name, tagline, description, prices in Toman (sent as Rial `Money`), monthly limits per meter (empty is
+  unlimited), up to 20 pricing-card lines, public, free and highlighted flags and display order. Server field errors
+  land on their fields.
+- Drafts are saved with `PUT` and published with an optional reason and step-up (the previous version is archived).
+  Published and archived versions are read-only; "new version" copies one into a draft. Archive needs a reason and
+  step-up. Each plan page lists all versions of its code. Finance and SuperAdmin edit (`plans.manage`); the others read.
+- Success badges use a darker text colour for WCAG AA contrast.
+
 ## Unreleased — users
 
 - Users page (`/users`, SuperAdmin, Support, Finance, ReadOnly): search by full phone (any spelling), name or id,

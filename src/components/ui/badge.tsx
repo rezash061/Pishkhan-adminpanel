@@ -3,7 +3,7 @@ import { cn } from "@/lib/cn";
 
 const tones = {
   neutral: "bg-muted text-foreground",
-  success: "bg-success/15 text-success",
+  success: "bg-success/15 text-success-foreground",
   warning: "bg-warning/20 text-warning-foreground",
   danger: "bg-danger/15 text-danger-foreground",
   info: "bg-primary/10 text-primary",

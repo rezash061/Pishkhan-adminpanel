@@ -1,4 +1,4 @@
-import type { AdminUserDetail, AdminWorkspaceChannel, AdminWorkspaceDetail, AuditEntry, Lead } from "@/lib/api/types";
+import type { Plan, AdminUserDetail, AdminWorkspaceChannel, AdminWorkspaceDetail, AuditEntry, Lead } from "@/lib/api/types";
 
 // Fake data only (overview section 8.7): fake workspaces, documentation IP ranges.
 const actors = [
@@ -160,3 +160,49 @@ export const userFixtures: (AdminUserDetail & { phone: string })[] = (() => {
   });
   return [...users.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id));
 })();
+
+const planBase = (code: string, version: number, status: string, over: Partial<Plan>): Plan => ({
+  id: `01938f64-0000-7000-8000-${code.padEnd(8, "0").slice(0, 8).replace(/[^0-9a-f]/g, "0")}000${version}`,
+  code,
+  version,
+  status,
+  name: code,
+  tagline: null,
+  description: null,
+  monthly: { amount: 0, currency: "IRR" },
+  annual: null,
+  overagePerConversation: null,
+  limits: {},
+  features: [],
+  isPublic: true,
+  isFree: false,
+  highlighted: false,
+  sortOrder: 0,
+  createdAt: "2026-10-01T08:00:00Z",
+  updatedAt: "2026-10-01T08:00:00Z",
+  publishedAt: status === "draft" ? null : "2026-10-01T09:00:00Z",
+  ...over,
+});
+
+/** Fake plans: free; basic (v1 archived, v2 on sale); pro (v1 on sale, v2 draft); a private enterprise draft. */
+export const planFixtures: Plan[] = [
+  planBase("free", 1, "published", { name: "رایگان", isFree: true, sortOrder: 0, limits: { ai_conversations: 50, channel_accounts: 1, seats: 1 }, features: [{ key: "inbox", label: "صندوق پیام یکپارچه", included: true, limit: null }] }),
+  planBase("basic", 1, "archived", { name: "پایه", sortOrder: 1, monthly: { amount: 2_490_000, currency: "IRR" }, limits: { ai_conversations: 400, channel_accounts: 1, seats: 2 } }),
+  planBase("basic", 2, "published", {
+    name: "پایه",
+    tagline: "برای فروشگاه‌های تازه‌کار",
+    sortOrder: 1,
+    monthly: { amount: 2_990_000, currency: "IRR" },
+    annual: { amount: 29_900_000, currency: "IRR" },
+    limits: { ai_conversations: 500, channel_accounts: 1, seats: 3, receipt_verifications: 100 },
+    features: [
+      { key: "ai", label: "پاسخ خودکار هوش مصنوعی", included: true, limit: "۵۰۰ گفتگو" },
+      { key: "receipts", label: "بررسی رسید کارت‌به‌کارت", included: true, limit: "۱۰۰ رسید" },
+    ],
+    publishedAt: "2026-10-20T09:00:00Z",
+    updatedAt: "2026-10-20T09:00:00Z",
+  }),
+  planBase("pro", 1, "published", { name: "حرفه‌ای", highlighted: true, sortOrder: 2, monthly: { amount: 6_990_000, currency: "IRR" }, overagePerConversation: { amount: 15_000, currency: "IRR" }, limits: { ai_conversations: 2000, seats: 10 } }),
+  planBase("pro", 2, "draft", { name: "حرفه‌ای", highlighted: true, sortOrder: 2, monthly: { amount: 7_490_000, currency: "IRR" }, overagePerConversation: { amount: 15_000, currency: "IRR" }, limits: { ai_conversations: 2500, seats: 10 }, updatedAt: "2026-10-30T10:00:00Z" }),
+  planBase("enterprise", 1, "draft", { name: "سازمانی", isPublic: false, sortOrder: 3, monthly: { amount: 25_000_000, currency: "IRR" } }),
+];

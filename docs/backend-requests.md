@@ -80,6 +80,15 @@ the detail tabs of admin plan 4.2 (usage, billing, conversations count) as their
 `GET /admin/v1/audit`, so the user page can link to the staff actions taken on that user (today it links to the
 user's own actions through `actor`); and revoking a single device (`DELETE /admin/v1/users/{userId}/sessions/{id}`).
 
+## 1f. Plans — backend PR #22
+
+`GET/POST /admin/v1/plans`, `GET/PUT /admin/v1/plans/{id}`, `POST /admin/v1/plans/{id}/versions`, `/publish` and
+`/archive` back the Plans list, the plan editor and the version history. Prices are typed in Toman and sent in Rial.
+**Found while testing:** on `feature/billing-plans` the public Api host does not start in Development, because
+`PlanAudit` needs `IStaffDirectory`, which only the AdminApi registers (reported to the backend thread). **Requests:** how
+many subscriptions sit on each version (to warn before archiving), and a plan-diff or "changed fields" in the
+`plan.update` audit entry.
+
 ## 2. Platform health
 
 The health page reads the AdminApi's own `/health/ready`, which today reports PostgreSQL and the two Redis
@@ -99,7 +108,7 @@ with one entry per dependency. The panel already renders any check names it rece
 
 ## 4. Phase 1 pages (BE-1.12)
 
-Workspace detail tabs beyond the overview, plans editor, AI providers / routes / prompts / evals /
+Workspace detail tabs beyond the overview, AI providers / routes / prompts / evals /
 traces, file quarantine, Kafka / DLQ / workers / Meta app, feature flags, CMS and the home dashboard KPIs and
 alerts, as listed in `02-admin-panel.md` section 4. List endpoints should use `page`, `pageSize`,
 `totalCount` (overview section 6) so the panel's tables can share one pagination component.

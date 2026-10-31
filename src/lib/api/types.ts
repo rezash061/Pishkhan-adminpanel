@@ -193,3 +193,48 @@ export interface AdminUserDetail {
 export interface AdminUserActionRequest {
   reason: string;
 }
+
+/** Money in Rial; staff see and type Toman (Rial ÷ 10). */
+export interface Money {
+  amount: number;
+  currency: "IRR";
+}
+
+export const PLAN_STATUSES = ["draft", "published", "archived"] as const;
+/** Limit meters of a plan; a missing or null limit is unlimited. */
+export const BILLING_METERS = ["ai_conversations", "ai_messages", "channel_accounts", "seats", "receipt_verifications", "sms"] as const;
+
+/** One line of the pricing card. */
+export interface PlanFeature {
+  key: string;
+  label: string;
+  included: boolean;
+  limit: string | null;
+}
+
+/** The editable content of a plan version (`PUT /admin/v1/plans/{id}`, and `plan` in `POST /admin/v1/plans`). */
+export interface PlanRequest {
+  name: string;
+  tagline: string | null;
+  description: string | null;
+  monthly: Money;
+  annual: Money | null;
+  overagePerConversation: Money | null;
+  limits: Record<string, number | null>;
+  features: PlanFeature[];
+  isPublic: boolean;
+  isFree: boolean;
+  highlighted: boolean;
+  sortOrder: number;
+}
+
+/** One version of a plan (backend PR #22). `status`: draft, published, archived. */
+export interface Plan extends PlanRequest {
+  id: string;
+  code: string;
+  version: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string | null;
+}
