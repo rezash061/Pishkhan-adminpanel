@@ -67,11 +67,14 @@ test("workspaces: search by Instagram username and phone, filters in the URL, de
 
   await search.fill("۰۹۱۲۰۰۰۰۰۰۳");
   await page.getByRole("button", { name: "جستجو", exact: true }).click();
+  await expect(page).toHaveURL(/q=09120000003/);
   await expect(page.locator("tbody tr")).toHaveCount(1);
   await expect(page.locator("tbody")).toContainText("گالری طلای آفتاب 3");
 
   await search.fill("");
   await page.getByRole("button", { name: "جستجو", exact: true }).click();
+  // Wait for the cleared search to reach the URL; the status filter keeps the current query.
+  await expect(page).not.toHaveURL(/q=/);
   await page.getByLabel("وضعیت").selectOption("pending_deletion");
   await expect(page).toHaveURL(/status=pending_deletion/);
   await expect(page.getByText(/^۳ مورد$/)).toBeVisible();
