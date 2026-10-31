@@ -5,7 +5,7 @@ const tones = {
   neutral: "bg-muted text-foreground",
   success: "bg-success/15 text-success",
   warning: "bg-warning/20 text-warning-foreground",
-  danger: "bg-danger/15 text-danger",
+  danger: "bg-danger/15 text-danger-foreground",
   info: "bg-primary/10 text-primary",
 } as const;
 

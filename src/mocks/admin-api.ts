@@ -3,7 +3,7 @@
 // codes and problem codes.
 // Fixtures are fake. Every mock password is "Pishkhan-admin-1234" and the TOTP code is always 123456.
 
-import { auditFixtures, leadFixtures } from "./fixtures";
+import { auditFixtures, leadFixtures, workspaceFixtures, workspaceOwnerPhones } from "./fixtures";
 
 const PASSWORD = "Pishkhan-admin-1234";
 const TOTP_CODE = "123456";
@@ -234,6 +234,48 @@ export async function handleMockRequest(request: Request): Promise<Response> {
     const pageSize = Math.min(100, Math.max(1, Number(q.get("pageSize") ?? 25)));
     const filtered = leadFixtures.filter((l) => !type || l.type === type);
     return json({ items: filtered.slice((page - 1) * pageSize, page * pageSize), totalCount: filtered.length, page, pageSize });
+  }
+
+  const workspaceReaders = ["SuperAdmin", "Support", "Finance", "ReadOnly"];
+  if (route === "GET /admin/v1/workspaces") {
+    if (!caller.user.roles.some((r) => workspaceReaders.includes(r))) return problem(403, "auth.forbidden");
+    const q = url.searchParams;
+    const text = (q.get("q") ?? "").trim();
+    if (text.length > 100) return problem(400, "validation.failed", { q: ["validation.too_long"] });
+    const status = q.get("status");
+    if (status && !["active", "suspended", "pending_deletion", "deleted"].includes(status)) return problem(400, "validation.failed", { status: ["validation.invalid"] });
+    const industry = q.get("industry");
+    const digits = text.replace(/^\+98/, "0").replace(/\D/g, "");
+    const needle = text.replace(/^@/, "").toLowerCase();
+    const matches = (w: (typeof workspaceFixtures)[number]) => {
+      if (!text) return true;
+      if (/^[0-9a-f-]{36}$/i.test(text)) return w.id === text.toLowerCase();
+      if (/^0?9\d{9}$/.test(digits)) return workspaceOwnerPhones[w.id] === (digits.startsWith("0") ? digits : `0${digits}`);
+      return w.name.toLowerCase().includes(needle) || w.slug.includes(needle) || w.channels.some((c) => c.username?.toLowerCase().includes(needle));
+    };
+    const filtered = workspaceFixtures.filter((w) => matches(w) && (!status || w.status === status) && (!industry || w.industry === industry));
+    const page = Math.max(1, Number(q.get("page") ?? 1));
+    const pageSize = Math.min(100, Math.max(1, Number(q.get("pageSize") ?? 25)));
+    const items = filtered.slice((page - 1) * pageSize, page * pageSize).map((w) => ({
+      id: w.id,
+      name: w.name,
+      slug: w.slug,
+      industry: w.industry,
+      status: w.status,
+      createdAt: w.createdAt,
+      deletionScheduledFor: w.deletionScheduledFor,
+      owner: w.owner,
+      memberCount: w.members.length,
+      channels: w.channels,
+    }));
+    return json({ items, totalCount: filtered.length, page, pageSize });
+  }
+
+  const workspace = request.method === "GET" ? /^\/admin\/v1\/workspaces\/([0-9a-f-]{36})$/i.exec(url.pathname) : null;
+  if (workspace) {
+    if (!caller.user.roles.some((r) => workspaceReaders.includes(r))) return problem(403, "auth.forbidden");
+    const found = workspaceFixtures.find((w) => w.id === workspace[1]?.toLowerCase());
+    return found ? json(found) : problem(404, "not_found");
   }
 
   const support = request.method === "POST" ? /^\/admin\/v1\/workspaces\/([0-9a-f-]{36})\/support-sessions$/i.exec(url.pathname) : null;

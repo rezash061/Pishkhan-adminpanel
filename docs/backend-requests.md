@@ -59,12 +59,19 @@ Response `200`:
 phone number; the panel masks it and reveals it on click. **Request:** an audited reveal (admin plan 2.3), for example
 masked phones in the list plus `POST /admin/v1/leads/{id}/reveal`, so revealing is recorded.
 
-## 1c. Support sessions — backend PR #18
+## 1c. Support sessions — done (backend PR #18)
 
 `POST /admin/v1/workspaces/{workspaceId}/support-sessions` with `{ reason, userId? }` (Support, step-up) backs the
-Support session page, which shows the returned one-time link and drops it once used or expired.
-**Requests:** a workspace search (`GET /admin/v1/workspaces?q=`) so staff do not have to paste workspace ids; the
-development `Backoffice:UserPanelUrl` defaults to port 3000, while `Instagram:PanelReturnUrl` uses 3001 for the user panel.
+Support session page, which shows the returned one-time link and drops it once used or expired. The workspace is
+picked through the workspace search (1d). `Backoffice:UserPanelUrl` now defaults to port 3001 (backend PR #19).
+
+## 1d. Workspace search and detail — backend PR #19
+
+`GET /admin/v1/workspaces?q=&status=&industry=&page=&pageSize=` and `GET /admin/v1/workspaces/{workspaceId}`
+(SuperAdmin, Support, Finance, ReadOnly) back the Workspaces list, the workspace detail page and the support-session
+workspace picker. **Requests for the next round:** the owner's display name is often empty, so a sign-up date or last
+sign-in on the owner would help support tell accounts apart; the plan name (not only `planId`) once Billing exists; and
+the detail tabs of admin plan 4.2 (usage, billing, conversations count) as their modules land.
 
 ## 2. Platform health
 
@@ -85,7 +92,7 @@ with one entry per dependency. The panel already renders any check names it rece
 
 ## 4. Phase 1 pages (BE-1.12)
 
-Workspaces (list, detail tabs, impersonation), users, plans editor, AI providers / routes / prompts / evals /
+Workspace detail tabs beyond the overview, users, plans editor, AI providers / routes / prompts / evals /
 traces, file quarantine, Kafka / DLQ / workers / Meta app, feature flags, CMS and the home dashboard KPIs and
 alerts, as listed in `02-admin-panel.md` section 4. List endpoints should use `page`, `pageSize`,
 `totalCount` (overview section 6) so the panel's tables can share one pagination component.

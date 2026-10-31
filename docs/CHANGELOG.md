@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased — workspaces
+
+- Workspaces page (`/workspaces`, SuperAdmin, Support, Finance, ReadOnly): search by name, slug, owner phone (any
+  spelling, Persian digits too), Instagram username or id, with status and industry filters in the URL, from
+  `GET /admin/v1/workspaces` (backend PR #19). Rows show the owner (masked phone), member count and channel status.
+- Workspace detail (`/workspaces/{id}`): overview, owner, members with roles, connected accounts with status, token
+  expiry and reason, deletion notices, and links to the workspace's audit log and to a support session (per member).
+- Support session page: the workspace is picked through the search instead of pasting an id, and the member is chosen
+  from a list (owner by default). `?workspaceId=` and `?userId=` pre-fill it. Without the search API it falls back
+  to typing ids.
+- Danger badges use a darker text colour for WCAG AA contrast.
+
 ## Unreleased — leads and support sessions
 
 - Leads page (`/leads`, SuperAdmin and Support): website waitlist and contact submissions from `GET /admin/v1/leads`,
