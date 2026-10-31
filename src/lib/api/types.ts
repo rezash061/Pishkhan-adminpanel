@@ -45,3 +45,32 @@ export interface PagedResult<T> {
   page: number;
   pageSize: number;
 }
+
+/** `GET /admin/v1/leads` (SuperAdmin, Support): website waitlist and contact-form submissions. */
+export interface Lead {
+  id: string;
+  type: "waitlist" | "contact" | string;
+  phone: string;
+  name: string | null;
+  instagramHandle: string | null;
+  vertical: string | null;
+  monthlyDms: string | null;
+  message: string | null;
+  utm: Record<string, string>;
+  /** How many times the same phone submitted this form. */
+  submissions: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** `POST /admin/v1/workspaces/{workspaceId}/support-sessions` (Support, step-up). */
+export interface StartSupportSessionRequest {
+  reason: string;
+  userId: string | null;
+}
+
+/** A one-time user-panel link. Never stored by the admin panel. */
+export interface SupportSessionLink {
+  url: string;
+  expiresAt: string;
+}

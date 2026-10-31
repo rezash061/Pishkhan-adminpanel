@@ -2,7 +2,8 @@
 
 The admin panel is built against the real AdminApi contract in
 `rezash061/pishkhan-backend` (`backend/openapi/admin.v1.json`). It covers staff sign-in, TOTP enrollment, refresh,
-logout, step-up, `/me`, staff list/create and (backend PR #10) the audit log. Everything else the admin plan
+logout, step-up, `/me`, staff list/create, the audit log (backend PR #10), website leads and support sessions
+(backend PR #18). Everything else the admin plan
 (`02-admin-panel.md`) needs is part of backend work package **BE-1.12 Backoffice APIs v1**.
 
 This file lists what the panel needs next, in the order the pages are built. Where the panel already calls an
@@ -51,6 +52,19 @@ Response `200`:
 ```
 
 `before` and `after` are JSON snapshots (sensitive values already redacted by the backend), or null.
+
+## 1b. Website leads — done
+
+`GET /admin/v1/leads?type=&page=&pageSize=` (SuperAdmin, Support) backs the Leads page. The response carries the full
+phone number; the panel masks it and reveals it on click. **Request:** an audited reveal (admin plan 2.3), for example
+masked phones in the list plus `POST /admin/v1/leads/{id}/reveal`, so revealing is recorded.
+
+## 1c. Support sessions — backend PR #18
+
+`POST /admin/v1/workspaces/{workspaceId}/support-sessions` with `{ reason, userId? }` (Support, step-up) backs the
+Support session page, which shows the returned one-time link and drops it once used or expired.
+**Requests:** a workspace search (`GET /admin/v1/workspaces?q=`) so staff do not have to paste workspace ids; the
+development `Backoffice:UserPanelUrl` defaults to port 3000, while `Instagram:PanelReturnUrl` uses 3001 for the user panel.
 
 ## 2. Platform health
 
