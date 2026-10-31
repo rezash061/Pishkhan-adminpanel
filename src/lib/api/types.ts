@@ -74,3 +74,67 @@ export interface SupportSessionLink {
   url: string;
   expiresAt: string;
 }
+
+/** Workspace status names of `GET /admin/v1/workspaces` (backend PR #19). */
+export const WORKSPACE_STATUSES = ["active", "suspended", "pending_deletion", "deleted"] as const;
+export const WORKSPACE_INDUSTRIES = ["clothing", "cosmetics", "jewelry", "beauty_clinic", "courses", "other"] as const;
+
+export interface AdminWorkspaceOwner {
+  id: string;
+  displayName: string | null;
+  maskedPhone: string;
+}
+
+/** A connected account. `status`: connecting, active, token_expiring, reauth_required, disconnected. */
+export interface AdminWorkspaceChannel {
+  id: string;
+  kind: string;
+  username: string | null;
+  status: string;
+  statusReason: string | null;
+  statusChangedAt: string | null;
+  tokenExpiresAt: string | null;
+  connectedAt: string;
+}
+
+/** A row of `GET /admin/v1/workspaces` (SuperAdmin, Support, Finance, ReadOnly). */
+export interface AdminWorkspaceSummary {
+  id: string;
+  name: string;
+  slug: string;
+  industry: string;
+  status: string;
+  createdAt: string;
+  deletionScheduledFor: string | null;
+  owner: AdminWorkspaceOwner | null;
+  memberCount: number;
+  channels: AdminWorkspaceChannel[];
+}
+
+export interface AdminWorkspaceMember {
+  userId: string;
+  displayName: string | null;
+  maskedPhone: string | null;
+  /** owner, admin, agent or viewer. */
+  role: string;
+  joinedAt: string;
+}
+
+/** `GET /admin/v1/workspaces/{workspaceId}`. Deleted workspaces are still returned. */
+export interface AdminWorkspaceDetail {
+  id: string;
+  name: string;
+  slug: string;
+  industry: string;
+  timeZone: string;
+  status: string;
+  planId: string | null;
+  createdAt: string;
+  deletionRequestedAt: string | null;
+  deletionScheduledFor: string | null;
+  deletedAt: string | null;
+  owner: AdminWorkspaceOwner | null;
+  members: AdminWorkspaceMember[];
+  channels: AdminWorkspaceChannel[];
+  pendingInvitations: number;
+}

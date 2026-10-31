@@ -12,11 +12,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function SupportSessionsPage({ searchParams }: PageProps<"/support/sessions">) {
   if (!(await staffWith("workspaces.impersonate"))) return <Forbidden />;
   const t = await getTranslations("support");
-  const { workspaceId } = await searchParams;
+  const { workspaceId, userId } = await searchParams;
   return (
     <>
       <PageHeader title={t("title")} description={t("description")} />
-      <SupportSessionForm initialWorkspaceId={typeof workspaceId === "string" ? workspaceId : ""} />
+      <SupportSessionForm initialWorkspaceId={typeof workspaceId === "string" ? workspaceId : ""} initialUserId={typeof userId === "string" ? userId : ""} />
     </>
   );
 }

@@ -1,4 +1,4 @@
-import type { AuditEntry, Lead } from "@/lib/api/types";
+import type { AdminWorkspaceChannel, AdminWorkspaceDetail, AuditEntry, Lead } from "@/lib/api/types";
 
 // Fake data only (overview section 8.7): fake workspaces, documentation IP ranges.
 const actors = [
@@ -62,3 +62,63 @@ export const leadFixtures: Lead[] = Array.from({ length: 37 }, (_, i) => {
     updatedAt: at,
   };
 });
+
+const shopNames = ["بوتیک نیلوفر", "آرایشی مهتاب", "گالری طلای آفتاب", "کلینیک پوست رز", "آموزشگاه هنر نو", "پوشاک سپید", "عطر و ادکلن بهار", "جواهری الماس"];
+const industries = ["clothing", "cosmetics", "jewelry", "beauty_clinic", "courses", "clothing", "cosmetics", "jewelry"];
+const channelStates = ["active", "active", "token_expiring", "reauth_required", "active", "disconnected"];
+
+/** 30 fake workspaces. The first one (…b001) is active with an Instagram account and three members. */
+export const workspaceFixtures: AdminWorkspaceDetail[] = Array.from({ length: 30 }, (_, i) => {
+  const n = i + 1;
+  const id = `01938f61-0000-7000-8000-00000000b${String(n).padStart(3, "0")}`;
+  const createdAt = new Date(Date.UTC(2026, 9, 30, 9, 0) - i * 26 * 3_600_000).toISOString();
+  const status = n % 10 === 0 ? "pending_deletion" : n % 13 === 0 ? "deleted" : n % 11 === 0 ? "suspended" : "active";
+  const ownerId = `01938f60-0000-7000-8000-00000000a${String(n).padStart(3, "0")}`;
+  const phone = `0912***${String(n).padStart(4, "0")}`;
+  const members = [
+    { userId: ownerId, displayName: `مالک ${n}`, maskedPhone: phone, role: "owner", joinedAt: createdAt },
+    ...(n % 2 === 1
+      ? [
+          { userId: `01938f60-0000-7000-8000-00000000c${String(n).padStart(3, "0")}`, displayName: `همکار ${n}`, maskedPhone: `0935***${String(n).padStart(4, "0")}`, role: "agent", joinedAt: createdAt },
+          { userId: `01938f60-0000-7000-8000-00000000d${String(n).padStart(3, "0")}`, displayName: null, maskedPhone: `0901***${String(n).padStart(4, "0")}`, role: "admin", joinedAt: createdAt },
+        ]
+      : []),
+  ];
+  const channels: AdminWorkspaceChannel[] =
+    n % 4 === 0
+      ? []
+      : [
+          {
+            id: `01938f62-0000-7000-8000-00000000e${String(n).padStart(3, "0")}`,
+            kind: "instagram",
+            username: `shop_${n}`,
+            status: channelStates[i % channelStates.length] ?? "active",
+            statusReason: (channelStates[i % channelStates.length] ?? "") === "reauth_required" ? "token_revoked" : null,
+            statusChangedAt: createdAt,
+            tokenExpiresAt: new Date(Date.parse(createdAt) + 60 * 86_400_000).toISOString(),
+            connectedAt: createdAt,
+          },
+        ];
+  return {
+    id,
+    name: `${shopNames[i % shopNames.length] ?? "فروشگاه"} ${n}`,
+    slug: `shop-${n}`,
+    industry: industries[i % industries.length] ?? "other",
+    timeZone: "Asia/Tehran",
+    status,
+    planId: null,
+    createdAt,
+    deletionRequestedAt: status === "pending_deletion" ? createdAt : null,
+    deletionScheduledFor: status === "pending_deletion" ? new Date(Date.parse(createdAt) + 30 * 86_400_000).toISOString() : null,
+    deletedAt: status === "deleted" ? createdAt : null,
+    owner: { id: ownerId, displayName: `مالک ${n}`, maskedPhone: phone },
+    members,
+    channels,
+    pendingInvitations: n % 3 === 0 ? 1 : 0,
+  };
+});
+
+/** Unmasked owner phones the mock search matches (0912000NNNN). */
+export const workspaceOwnerPhones: Record<string, string> = Object.fromEntries(
+  workspaceFixtures.map((w, i) => [w.id, `0912000${String(i + 1).padStart(4, "0")}`]),
+);

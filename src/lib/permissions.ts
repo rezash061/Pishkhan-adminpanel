@@ -59,7 +59,7 @@ export function can(roles: readonly string[], permission: Permission): boolean {
   return permissionsFor(roles).has(permission);
 }
 
-export type NavIcon = "home" | "staff" | "audit" | "health" | "settings" | "leads" | "support";
+export type NavIcon = "home" | "staff" | "audit" | "health" | "settings" | "leads" | "support" | "workspaces";
 
 export interface NavItem {
   href: string;
@@ -70,9 +70,10 @@ export interface NavItem {
   section: "main" | "support" | "security" | "platform" | "account";
 }
 
-// Only pages that exist are listed. Workspaces, billing, AI and content join as their AdminApi endpoints land (BE-1.12).
+// Only pages that exist are listed. Billing, AI and content join as their AdminApi endpoints land (BE-1.12).
 export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/", labelKey: "home", icon: "home", permission: "dashboard.read", section: "main" },
+  { href: "/workspaces", labelKey: "workspaces", icon: "workspaces", permission: "workspaces.read", section: "main" },
   { href: "/leads", labelKey: "leads", icon: "leads", permission: "leads.read", section: "main" },
   { href: "/support/sessions", labelKey: "supportSessions", icon: "support", permission: "workspaces.impersonate", section: "support" },
   { href: "/security/audit-log", labelKey: "auditLog", icon: "audit", permission: "audit.read", section: "security" },

@@ -69,6 +69,8 @@ test("creating a staff account requires step-up re-authentication", async ({ pag
 test("audit log filters are deep-linkable and entries open in detail", async ({ page }) => {
   await login(page, "superadmin");
   await page.goto("/security/audit-log");
+  // The rows come from a client query, so once they show the form is hydrated and will not submit natively.
+  await expect(page.locator("tbody tr").first()).toBeVisible();
   await page.getByLabel("نوع موجودیت").selectOption("plan");
   await page.getByLabel("از تاریخ").fill("not a date");
   await page.getByRole("button", { name: "اعمال فیلتر" }).click();

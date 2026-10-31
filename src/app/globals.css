@@ -24,6 +24,7 @@
   --color-primary: #5f2ceb;
   --color-primary-foreground: #ffffff;
   --color-danger: #c4253f;
+  --color-danger-foreground: #9e1b31;
   --color-success: #12805c;
   --color-warning: #d68a00;
   --color-warning-foreground: #7a4d00;
@@ -45,6 +46,7 @@
     --color-primary: #9073fc;
     --color-primary-foreground: #0e0c1a;
     --color-danger: #ff7088;
+    --color-danger-foreground: #ff8fa1;
     --color-success: #46c79b;
     --color-warning: #f0b44c;
     --color-warning-foreground: #f0b44c;
