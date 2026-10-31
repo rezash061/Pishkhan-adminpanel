@@ -1,4 +1,4 @@
-import type { AdminWorkspaceChannel, AdminWorkspaceDetail, AuditEntry, Lead } from "@/lib/api/types";
+import type { AdminUserDetail, AdminWorkspaceChannel, AdminWorkspaceDetail, AuditEntry, Lead } from "@/lib/api/types";
 
 // Fake data only (overview section 8.7): fake workspaces, documentation IP ranges.
 const actors = [
@@ -122,3 +122,41 @@ export const workspaceFixtures: AdminWorkspaceDetail[] = Array.from({ length: 30
 export const workspaceOwnerPhones: Record<string, string> = Object.fromEntries(
   workspaceFixtures.map((w, i) => [w.id, `0912000${String(i + 1).padStart(4, "0")}`]),
 );
+
+/** Panel users behind the workspace fixtures, with their unmasked phones for the mock search. */
+export const userFixtures: (AdminUserDetail & { phone: string })[] = (() => {
+  const users = new Map<string, AdminUserDetail & { phone: string }>();
+  workspaceFixtures.forEach((w, i) => {
+    for (const m of w.members) {
+      const prefix = m.maskedPhone?.slice(0, 4) ?? "0912";
+      const phone = `${prefix}000${String(i + 1).padStart(4, "0")}`;
+      const user = users.get(m.userId) ?? {
+        id: m.userId,
+        displayName: m.displayName,
+        maskedPhone: m.maskedPhone ?? "",
+        phone,
+        status: m.userId.endsWith("d011") ? "suspended" : "active",
+        totpEnabled: i % 3 === 0,
+        hasPassword: m.role === "owner",
+        createdAt: m.joinedAt,
+        lastLoginAt: m.role === "admin" ? null : m.joinedAt,
+        workspaces: [],
+        sessions:
+          m.role === "admin"
+            ? []
+            : Array.from({ length: m.role === "owner" ? 2 : 1 }, (_, k) => ({
+                id: `01938f63-0000-7000-8000-${m.userId.slice(-4)}0000000${k}`,
+                createdAt: m.joinedAt,
+                lastUsedAt: new Date(Date.parse(m.joinedAt) + (k + 1) * 3_600_000).toISOString(),
+                expiresAt: new Date(Date.parse(m.joinedAt) + 30 * 86_400_000).toISOString(),
+                ip: k === 0 ? "203.0.113.10" : "198.51.100.24",
+                userAgent: k === 0 ? "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Safari/604.1" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/141.0",
+                authMethods: i % 3 === 0 ? "otp+totp" : "otp",
+              })),
+      };
+      user.workspaces.push({ workspaceId: w.id, workspaceName: w.name, workspaceStatus: w.status, role: m.role, joinedAt: m.joinedAt });
+      users.set(m.userId, user);
+    }
+  });
+  return [...users.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id));
+})();

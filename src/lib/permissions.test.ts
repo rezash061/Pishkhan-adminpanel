@@ -5,18 +5,18 @@ const hrefs = (roles: string[]) => navFor(roles).map((i) => i.href);
 
 describe("navigation per role", () => {
   it.each([
-    ["SuperAdmin", ["/", "/workspaces", "/leads", "/support/sessions", "/security/audit-log", "/security/staff", "/platform/health", "/settings"]],
-    ["Support", ["/", "/workspaces", "/leads", "/support/sessions", "/security/audit-log", "/platform/health", "/settings"]],
-    ["Finance", ["/", "/workspaces", "/settings"]],
+    ["SuperAdmin", ["/", "/workspaces", "/users", "/leads", "/support/sessions", "/security/audit-log", "/security/staff", "/platform/health", "/settings"]],
+    ["Support", ["/", "/workspaces", "/users", "/leads", "/support/sessions", "/security/audit-log", "/platform/health", "/settings"]],
+    ["Finance", ["/", "/workspaces", "/users", "/settings"]],
     ["ContentEditor", ["/", "/settings"]],
     ["AIOps", ["/", "/platform/health", "/settings"]],
-    ["ReadOnly", ["/", "/workspaces", "/platform/health", "/settings"]],
+    ["ReadOnly", ["/", "/workspaces", "/users", "/platform/health", "/settings"]],
   ])("%s sees %j", (role, expected) => {
     expect(hrefs([role])).toEqual(expected);
   });
 
   it("combines roles", () => {
-    expect(hrefs(["Finance", "AIOps"])).toEqual(["/", "/workspaces", "/platform/health", "/settings"]);
+    expect(hrefs(["Finance", "AIOps"])).toEqual(["/", "/workspaces", "/users", "/platform/health", "/settings"]);
   });
 
   it("grants nothing for unknown roles", () => {
