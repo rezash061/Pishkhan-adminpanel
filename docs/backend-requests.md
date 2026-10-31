@@ -89,6 +89,13 @@ user's own actions through `actor`); and revoking a single device (`DELETE /admi
 many subscriptions sit on each version (to warn before archiving), and a plan-diff or "changed fields" in the
 `plan.update` audit entry.
 
+## 1g. Workspace billing — backend PR #23
+
+`GET /admin/v1/workspaces/{id}/billing` and `POST .../subscription`, `/subscription/extend`, `/subscription/cancel` back
+the "Subscription and usage" section on the workspace page. The panel sends `days` and never `endsAt`. The workspace
+detail's `planId` (from `tenancy.workspaces`) stays null while a subscription is active, so the panel no longer shows it
+and uses `/billing` instead. **Request:** drop `planId` from `AdminWorkspaceDetail`, or fill it from billing.
+
 ## 2. Platform health
 
 The health page reads the AdminApi's own `/health/ready`, which today reports PostgreSQL and the two Redis

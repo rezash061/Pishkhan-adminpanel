@@ -238,3 +238,52 @@ export interface Plan extends PlanRequest {
   updatedAt: string;
   publishedAt: string | null;
 }
+
+/** A subscription. `state`: active, trialing, expired, ended. */
+export interface SubscriptionInfo {
+  id: string;
+  planId: string;
+  planCode: string;
+  planVersion: number;
+  state: string;
+  trial: boolean;
+  startsAt: string;
+  endsAt: string | null;
+  endedAt: string | null;
+  endReason: string | null;
+}
+
+/** The workspace's plan now. `source`: subscription, free (the published free plan) or none (nothing limited). */
+export interface CurrentPlan {
+  source: string;
+  planId: string | null;
+  planCode: string | null;
+  planName: string | null;
+  planVersion: number | null;
+  trial: boolean;
+  endsAt: string | null;
+  limits: Record<string, number | null>;
+  subscription: SubscriptionInfo | null;
+}
+
+export interface UsageMeter {
+  meter: string;
+  used: number;
+  limit: number | null;
+}
+
+/** `GET /admin/v1/workspaces/{id}/billing` (backend PR #23). History is newest first. */
+export interface AdminWorkspaceBilling {
+  current: CurrentPlan;
+  usage: { periodStart: string; periodEnd: string; meters: UsageMeter[] };
+  history: SubscriptionInfo[];
+}
+
+/** `POST /admin/v1/workspaces/{id}/subscription`: `endsAt` or `days` (1 to 1095) or neither (until cancelled; not for a trial). */
+export interface GrantPlanRequest {
+  planId: string;
+  trial: boolean;
+  endsAt: string | null;
+  days: number | null;
+  reason: string;
+}

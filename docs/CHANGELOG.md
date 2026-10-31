@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — workspace billing
+
+- "Subscription and usage" section on the workspace page, from `GET /admin/v1/workspaces/{id}/billing` (backend
+  PR #23): the current plan and where it comes from (subscription, free plan or no limits), its state and end, usage per
+  meter this Jalali month against the plan's limits, and the subscription history with end reasons.
+- Finance and SuperAdmin (`subscriptions.manage`) can grant a published plan or a trial (trial needs a length in days),
+  extend the end by 1 to 365 days and cancel, each with a reason and step-up. Hidden for deleted workspaces.
+
 ## Unreleased — plans
 
 - Plans page (`/billing/plans`, SuperAdmin, Finance, Support, ReadOnly) from `GET /admin/v1/plans` (backend PR #22):

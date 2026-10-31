@@ -28,6 +28,21 @@ interface MockState {
   /** Panel users changed by staff actions (status, sessions). */
   users: typeof userFixtures;
   plans: typeof planFixtures;
+  subscriptions: MockSubscription[];
+}
+
+interface MockSubscription {
+  id: string;
+  workspaceId: string;
+  planId: string;
+  planCode: string;
+  planVersion: number;
+  status: "active" | "ended";
+  trial: boolean;
+  startsAt: string;
+  endsAt: string | null;
+  endedAt: string | null;
+  endReason: string | null;
 }
 
 const seed = (): MockState => ({
@@ -43,7 +58,57 @@ const seed = (): MockState => ({
   revokedRefresh: new Set(),
   users: structuredClone(userFixtures),
   plans: structuredClone(planFixtures),
+  subscriptions: seedSubscriptions(),
 });
+
+const DAY = 86_400_000;
+
+/** Workspace b001 has a pro subscription (after a trial); b003's trial ran out. Everyone else is on the free plan. */
+function seedSubscriptions(): MockSubscription[] {
+  const pro = planFixtures.find((p) => p.code === "pro" && p.status === "published")!;
+  const now = Date.now();
+  const iso = (offsetDays: number) => new Date(now + offsetDays * DAY).toISOString();
+  const sub = (n: number, workspace: string, over: Partial<MockSubscription>): MockSubscription => ({
+    id: `01938f70-0000-7000-8000-00000000e${String(n).padStart(3, "0")}`,
+    workspaceId: `01938f61-0000-7000-8000-00000000b${workspace}`,
+    planId: pro.id,
+    planCode: pro.code,
+    planVersion: pro.version,
+    status: "active",
+    trial: false,
+    startsAt: iso(-10),
+    endsAt: iso(20),
+    endedAt: null,
+    endReason: null,
+    ...over,
+  });
+  return [
+    sub(1, "001", { trial: true, status: "ended", startsAt: iso(-24), endsAt: iso(-10), endedAt: iso(-10), endReason: "replaced" }),
+    sub(2, "001", {}),
+    sub(3, "003", { trial: true, startsAt: iso(-16), endsAt: iso(-2) }),
+  ];
+}
+
+function subscriptionState(s: MockSubscription, now = Date.now()): string {
+  if (s.status === "ended") return "ended";
+  if (s.endsAt && Date.parse(s.endsAt) <= now) return "expired";
+  return s.trial ? "trialing" : "active";
+}
+
+function subscriptionInfo(s: MockSubscription) {
+  return {
+    id: s.id,
+    planId: s.planId,
+    planCode: s.planCode,
+    planVersion: s.planVersion,
+    state: subscriptionState(s),
+    trial: s.trial,
+    startsAt: s.startsAt,
+    endsAt: s.endsAt,
+    endedAt: s.endedAt,
+    endReason: s.endReason,
+  };
+}
 
 function staff(id: string, username: string, roles: string[], totpEnabled: boolean, createdAt: string): MockStaff {
   return { id, username, password: PASSWORD, roles, status: "active", totpEnabled, createdAt };
@@ -403,6 +468,85 @@ export async function handleMockRequest(request: Request): Promise<Response> {
       } else plan.status = "archived";
       plan.updatedAt = new Date().toISOString();
       return json(plan);
+    }
+  }
+
+  const billing = /^\/admin\/v1\/workspaces\/([0-9a-f-]{36})\/(billing|subscription(?:\/extend|\/cancel)?)$/i.exec(url.pathname);
+  if (billing) {
+    const workspaceId = billing[1]!.toLowerCase();
+    const found = workspaceFixtures.find((w) => w.id === workspaceId);
+    const subs = db.subscriptions;
+    const active = subs.find((s) => s.workspaceId === workspaceId && s.status === "active");
+    if (request.method === "GET" && billing[2] === "billing") {
+      if (!caller.user.roles.some((r) => workspaceReaders.includes(r))) return problem(403, "auth.forbidden");
+      if (!found) return problem(404, "not_found");
+      const live = active && subscriptionState(active) !== "expired" ? active : null;
+      const plan = live ? db.plans.find((p) => p.id === live.planId) : db.plans.find((p) => p.isFree && p.status === "published");
+      const limits = plan?.limits ?? {};
+      const now = new Date();
+      const periodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1) - 3.5 * 3_600_000);
+      const periodEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1) - 3.5 * 3_600_000);
+      const seed = Number.parseInt(workspaceId.slice(-3), 10) || 1;
+      const used: Record<string, number> = {
+        ai_conversations: (seed * 37) % 60,
+        ai_messages: (seed * 211) % 900,
+        channel_accounts: found.channels.length,
+        seats: found.members.length,
+        receipt_verifications: (seed * 7) % 20,
+        sms: (seed * 3) % 15,
+      };
+      return json({
+        current: {
+          source: live ? "subscription" : plan ? "free" : "none",
+          planId: plan?.id ?? null,
+          planCode: plan?.code ?? null,
+          planName: plan?.name ?? null,
+          planVersion: plan?.version ?? null,
+          trial: live?.trial ?? false,
+          endsAt: live?.endsAt ?? null,
+          limits,
+          subscription: active ? subscriptionInfo(active) : null,
+        },
+        usage: {
+          periodStart: periodStart.toISOString(),
+          periodEnd: periodEnd.toISOString(),
+          meters: Object.entries(used).map(([meter, n]) => ({ meter, used: n, limit: (limits as Record<string, number | null | undefined>)[meter] ?? null })),
+        },
+        history: subs.filter((s) => s.workspaceId === workspaceId).sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt)).map(subscriptionInfo),
+      });
+    }
+    if (request.method === "POST" && billing[2] !== "billing") {
+      if (!caller.user.roles.some((r) => r === "SuperAdmin" || r === "Finance")) return problem(403, "auth.forbidden");
+      if (!caller.stepUpAt || Date.now() - caller.stepUpAt > 300_000) return problem(403, "auth.step_up.required");
+      const b = await body<{ planId: string; trial: boolean; endsAt: string | null; days: number | null; reason: string }>(request);
+      const reason = (b.reason ?? "").trim();
+      if (reason.length < 5 || reason.length > 300) return problem(400, "validation.failed", { reason: [reason ? (reason.length < 5 ? "validation.too_short" : "validation.too_long") : "validation.required"] });
+      const now = Date.now();
+      const kind = billing[2]!.toLowerCase();
+      if (kind === "subscription") {
+        if (b.endsAt != null && b.days != null) return problem(400, "validation.failed", { days: ["billing.subscription.end_twice"] });
+        if (b.days != null && (!Number.isInteger(b.days) || b.days < 1 || b.days > 1095)) return problem(400, "validation.failed", { days: ["validation.range"] });
+        const end = b.endsAt ?? (b.days != null ? new Date(now + b.days * DAY).toISOString() : null);
+        if (b.trial && !end) return problem(400, "validation.failed", { days: ["billing.subscription.trial_needs_end"] });
+        if (!found) return problem(404, "not_found");
+        const plan = db.plans.find((p) => p.id === b.planId);
+        if (!plan) return problem(404, "billing.plan.not_found");
+        if (plan.status !== "published") return problem(409, "billing.plan.not_published");
+        if (active) Object.assign(active, { status: "ended", endedAt: new Date(now).toISOString(), endReason: "replaced" });
+        const granted: MockSubscription = { id: crypto.randomUUID(), workspaceId, planId: plan.id, planCode: plan.code, planVersion: plan.version, status: "active", trial: !!b.trial, startsAt: new Date(now).toISOString(), endsAt: end, endedAt: null, endReason: null };
+        subs.push(granted);
+        return json(subscriptionInfo(granted));
+      }
+      if (kind === "subscription/extend") {
+        if (!Number.isInteger(b.days) || b.days! < 1 || b.days! > 365) return problem(400, "validation.failed", { days: ["validation.range"] });
+        if (!active) return problem(409, "billing.subscription.none");
+        if (!active.endsAt) return problem(409, "billing.subscription.not_extendable");
+        active.endsAt = new Date(Math.max(Date.parse(active.endsAt), now) + b.days! * DAY).toISOString();
+        return json(subscriptionInfo(active));
+      }
+      if (!active) return problem(409, "billing.subscription.none");
+      Object.assign(active, { status: "ended", endedAt: new Date(now).toISOString(), endReason: "cancelled" });
+      return json(subscriptionInfo(active));
     }
   }
 
