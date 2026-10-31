@@ -13,6 +13,7 @@ export const PERMISSIONS = [
   "workspaces.read",
   "workspaces.impersonate",
   "users.read",
+  "users.manage",
   "leads.read",
   "billing.read",
   "billing.refund",
@@ -33,10 +34,11 @@ const ROLE_PERMISSIONS: Record<StaffRole, readonly Permission[]> = {
     "workspaces.read",
     "workspaces.impersonate",
     "users.read",
+    "users.manage",
     "leads.read",
     "files.quarantine",
   ],
-  Finance: ["dashboard.read", "billing.read", "billing.refund", "workspaces.read", "export"],
+  Finance: ["dashboard.read", "billing.read", "billing.refund", "workspaces.read", "users.read", "export"],
   ContentEditor: ["dashboard.read", "content.manage"],
   AIOps: ["dashboard.read", "ai.read", "ai.manage", "platform.health.read"],
   ReadOnly: ["dashboard.read", "platform.health.read", "workspaces.read", "users.read", "billing.read", "ai.read"],
@@ -59,7 +61,7 @@ export function can(roles: readonly string[], permission: Permission): boolean {
   return permissionsFor(roles).has(permission);
 }
 
-export type NavIcon = "home" | "staff" | "audit" | "health" | "settings" | "leads" | "support" | "workspaces";
+export type NavIcon = "home" | "staff" | "audit" | "health" | "settings" | "leads" | "support" | "workspaces" | "users";
 
 export interface NavItem {
   href: string;
@@ -74,6 +76,7 @@ export interface NavItem {
 export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/", labelKey: "home", icon: "home", permission: "dashboard.read", section: "main" },
   { href: "/workspaces", labelKey: "workspaces", icon: "workspaces", permission: "workspaces.read", section: "main" },
+  { href: "/users", labelKey: "users", icon: "users", permission: "users.read", section: "main" },
   { href: "/leads", labelKey: "leads", icon: "leads", permission: "leads.read", section: "main" },
   { href: "/support/sessions", labelKey: "supportSessions", icon: "support", permission: "workspaces.impersonate", section: "support" },
   { href: "/security/audit-log", labelKey: "auditLog", icon: "audit", permission: "audit.read", section: "security" },

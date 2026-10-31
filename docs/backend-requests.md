@@ -73,6 +73,13 @@ workspace picker. **Requests for the next round:** the owner's display name is o
 sign-in on the owner would help support tell accounts apart; the plan name (not only `planId`) once Billing exists; and
 the detail tabs of admin plan 4.2 (usage, billing, conversations count) as their modules land.
 
+## 1e. Users — backend PR #21
+
+`GET /admin/v1/users`, `GET /admin/v1/users/{userId}` and `POST /admin/v1/users/{userId}/sessions/revoke`, `/block`,
+`/unblock` (reason + step-up) back the Users list and detail. **Requests for the next round:** an `entityId` filter on
+`GET /admin/v1/audit`, so the user page can link to the staff actions taken on that user (today it links to the
+user's own actions through `actor`); and revoking a single device (`DELETE /admin/v1/users/{userId}/sessions/{id}`).
+
 ## 2. Platform health
 
 The health page reads the AdminApi's own `/health/ready`, which today reports PostgreSQL and the two Redis
@@ -92,7 +99,7 @@ with one entry per dependency. The panel already renders any check names it rece
 
 ## 4. Phase 1 pages (BE-1.12)
 
-Workspace detail tabs beyond the overview, users, plans editor, AI providers / routes / prompts / evals /
+Workspace detail tabs beyond the overview, plans editor, AI providers / routes / prompts / evals /
 traces, file quarantine, Kafka / DLQ / workers / Meta app, feature flags, CMS and the home dashboard KPIs and
 alerts, as listed in `02-admin-panel.md` section 4. List endpoints should use `page`, `pageSize`,
 `totalCount` (overview section 6) so the panel's tables can share one pagination component.

@@ -3,7 +3,7 @@
 // codes and problem codes.
 // Fixtures are fake. Every mock password is "Pishkhan-admin-1234" and the TOTP code is always 123456.
 
-import { auditFixtures, leadFixtures, workspaceFixtures, workspaceOwnerPhones } from "./fixtures";
+import { auditFixtures, leadFixtures, userFixtures, workspaceFixtures, workspaceOwnerPhones } from "./fixtures";
 
 const PASSWORD = "Pishkhan-admin-1234";
 const TOTP_CODE = "123456";
@@ -23,6 +23,8 @@ interface MockState {
   staff: MockStaff[];
   enrollments: Map<string, string>;
   revokedRefresh: Set<string>;
+  /** Panel users changed by staff actions (status, sessions). */
+  users: typeof userFixtures;
 }
 
 const seed = (): MockState => ({
@@ -36,6 +38,7 @@ const seed = (): MockState => ({
   ],
   enrollments: new Map(),
   revokedRefresh: new Set(),
+  users: structuredClone(userFixtures),
 });
 
 function staff(id: string, username: string, roles: string[], totpEnabled: boolean, createdAt: string): MockStaff {
@@ -99,6 +102,19 @@ function authenticate(request: Request): Caller | null {
 }
 
 const isSuperAdmin = (c: Caller) => c.user.roles.includes("SuperAdmin");
+
+function userSummary(u: (typeof userFixtures)[number]) {
+  return {
+    id: u.id,
+    displayName: u.displayName,
+    maskedPhone: u.maskedPhone,
+    status: u.status,
+    totpEnabled: u.totpEnabled,
+    createdAt: u.createdAt,
+    lastLoginAt: u.lastLoginAt,
+    activeSessions: u.sessions.length,
+  };
+}
 
 function summary(s: MockStaff) {
   return { id: s.id, username: s.username, roles: s.roles, status: s.status, totpEnabled: s.totpEnabled, createdAt: s.createdAt };
@@ -276,6 +292,48 @@ export async function handleMockRequest(request: Request): Promise<Response> {
     if (!caller.user.roles.some((r) => workspaceReaders.includes(r))) return problem(403, "auth.forbidden");
     const found = workspaceFixtures.find((w) => w.id === workspace[1]?.toLowerCase());
     return found ? json(found) : problem(404, "not_found");
+  }
+
+  if (route === "GET /admin/v1/users") {
+    if (!caller.user.roles.some((r) => workspaceReaders.includes(r))) return problem(403, "auth.forbidden");
+    const q = url.searchParams;
+    const text = (q.get("q") ?? "").trim();
+    if (text.length > 100) return problem(400, "validation.failed", { q: ["validation.too_long"] });
+    const status = q.get("status");
+    if (status && status !== "active" && status !== "suspended") return problem(400, "validation.failed", { status: ["validation.invalid"] });
+    const digits = text.replace(/^\+98/, "0").replace(/\D/g, "");
+    const matches = (u: (typeof userFixtures)[number]) => {
+      if (!text) return true;
+      if (/^[0-9a-f-]{36}$/i.test(text)) return u.id === text.toLowerCase();
+      if (/^0?9\d{9}$/.test(digits)) return u.phone === (digits.startsWith("0") ? digits : `0${digits}`);
+      return (u.displayName ?? "").toLowerCase().includes(text.toLowerCase());
+    };
+    const filtered = state().users.filter((u) => matches(u) && (!status || u.status === status));
+    const page = Math.max(1, Number(q.get("page") ?? 1));
+    const pageSize = Math.min(100, Math.max(1, Number(q.get("pageSize") ?? 25)));
+    return json({ items: filtered.slice((page - 1) * pageSize, page * pageSize).map(userSummary), totalCount: filtered.length, page, pageSize });
+  }
+
+  const userRoute = /^\/admin\/v1\/users\/([0-9a-f-]{36})(?:\/(sessions\/revoke|block|unblock))?$/i.exec(url.pathname);
+  if (userRoute) {
+    const found = state().users.find((u) => u.id === userRoute[1]?.toLowerCase());
+    const act = userRoute[2];
+    if (request.method === "GET" && !act) {
+      if (!caller.user.roles.some((r) => workspaceReaders.includes(r))) return problem(403, "auth.forbidden");
+      if (!found) return problem(404, "not_found");
+      return json({ ...found, phone: undefined });
+    }
+    if (request.method === "POST" && act) {
+      if (!caller.user.roles.some((r) => r === "SuperAdmin" || r === "Support")) return problem(403, "auth.forbidden");
+      if (!caller.stepUpAt || Date.now() - caller.stepUpAt > 300_000) return problem(403, "auth.step_up.required");
+      const reason = ((await body<{ reason: string }>(request)).reason ?? "").trim();
+      if (reason.length < 5 || reason.length > 300) return problem(400, "validation.failed", { reason: [reason.length < 5 ? "validation.too_short" : "validation.too_long"] });
+      if (!found) return problem(404, "not_found");
+      if (act === "block") found.status = "suspended";
+      if (act === "unblock") found.status = "active";
+      else found.sessions = [];
+      return json(userSummary(found));
+    }
   }
 
   const support = request.method === "POST" ? /^\/admin\/v1\/workspaces\/([0-9a-f-]{36})\/support-sessions$/i.exec(url.pathname) : null;

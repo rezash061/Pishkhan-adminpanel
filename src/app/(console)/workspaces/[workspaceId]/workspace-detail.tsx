@@ -168,7 +168,15 @@ export function WorkspaceDetailView({ workspaceId }: { workspaceId: string }) {
             ) : null}
             {w.members.map((m) => (
               <tr key={m.userId}>
-                <Td>{m.displayName ?? "—"}</Td>
+                <Td>
+                  {staff.can("users.read") ? (
+                    <Link href={`/users/${m.userId}`} className="text-primary hover:underline">
+                      {m.displayName ?? t("detail.openUser")}
+                    </Link>
+                  ) : (
+                    (m.displayName ?? "—")
+                  )}
+                </Td>
                 <Td className="ltr text-start font-mono text-xs">{m.maskedPhone ?? "—"}</Td>
                 <Td>
                   <Badge tone={m.role === "owner" ? "info" : "neutral"}>{t.has(`roles.${m.role}`) ? t(`roles.${m.role}`) : m.role}</Badge>

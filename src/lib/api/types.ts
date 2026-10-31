@@ -138,3 +138,58 @@ export interface AdminWorkspaceDetail {
   channels: AdminWorkspaceChannel[];
   pendingInvitations: number;
 }
+
+export const USER_STATUSES = ["active", "suspended"] as const;
+
+/** A row of `GET /admin/v1/users` (SuperAdmin, Support, Finance, ReadOnly). Also returned by the user actions. */
+export interface AdminUserSummary {
+  id: string;
+  displayName: string | null;
+  maskedPhone: string;
+  /** active or suspended (blocked). */
+  status: string;
+  totpEnabled: boolean;
+  createdAt: string;
+  lastLoginAt: string | null;
+  /** Signed-in devices; support sessions are not counted. */
+  activeSessions: number;
+}
+
+/** One signed-in device. `id` is the session family, stable across refreshes. */
+export interface AdminUserSession {
+  id: string;
+  createdAt: string;
+  lastUsedAt: string;
+  expiresAt: string;
+  ip: string | null;
+  userAgent: string | null;
+  /** For example otp or otp+totp. */
+  authMethods: string;
+}
+
+export interface UserMembership {
+  workspaceId: string;
+  workspaceName: string;
+  workspaceStatus: string;
+  role: string;
+  joinedAt: string;
+}
+
+/** `GET /admin/v1/users/{userId}`. */
+export interface AdminUserDetail {
+  id: string;
+  displayName: string | null;
+  maskedPhone: string;
+  status: string;
+  totpEnabled: boolean;
+  hasPassword: boolean;
+  createdAt: string;
+  lastLoginAt: string | null;
+  workspaces: UserMembership[];
+  sessions: AdminUserSession[];
+}
+
+/** `POST /admin/v1/users/{id}/sessions/revoke`, `/block`, `/unblock` (Support, step-up). */
+export interface AdminUserActionRequest {
+  reason: string;
+}

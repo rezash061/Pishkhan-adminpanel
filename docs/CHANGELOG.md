@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — users
+
+- Users page (`/users`, SuperAdmin, Support, Finance, ReadOnly): search by full phone (any spelling), name or id,
+  status filter in the URL, from `GET /admin/v1/users` (backend PR #21). Rows show masked phone, status, 2FA, signed-in
+  devices and last sign-in.
+- User detail (`/users/{id}`): overview, workspaces with role and status (linking to the workspace), signed-in devices.
+  Support and SuperAdmin can sign the user out everywhere, block and unblock, each with a reason and step-up.
+- Workspace members link to their user page. Finance now sees users, as the backend allows.
+
 ## Unreleased — workspaces
 
 - Workspaces page (`/workspaces`, SuperAdmin, Support, Finance, ReadOnly): search by name, slug, owner phone (any
