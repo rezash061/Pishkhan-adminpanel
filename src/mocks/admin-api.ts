@@ -3,7 +3,9 @@
 // codes and problem codes.
 // Fixtures are fake. Every mock password is "Pishkhan-admin-1234" and the TOTP code is always 123456.
 
-import { auditFixtures, leadFixtures, userFixtures, workspaceFixtures, workspaceOwnerPhones } from "./fixtures";
+import { auditFixtures, leadFixtures, planFixtures, userFixtures, workspaceFixtures, workspaceOwnerPhones } from "./fixtures";
+
+type PlanRequestBody = Omit<(typeof planFixtures)[number], "id" | "code" | "version" | "status" | "createdAt" | "updatedAt" | "publishedAt">;
 
 const PASSWORD = "Pishkhan-admin-1234";
 const TOTP_CODE = "123456";
@@ -25,6 +27,7 @@ interface MockState {
   revokedRefresh: Set<string>;
   /** Panel users changed by staff actions (status, sessions). */
   users: typeof userFixtures;
+  plans: typeof planFixtures;
 }
 
 const seed = (): MockState => ({
@@ -39,6 +42,7 @@ const seed = (): MockState => ({
   enrollments: new Map(),
   revokedRefresh: new Set(),
   users: structuredClone(userFixtures),
+  plans: structuredClone(planFixtures),
 });
 
 function staff(id: string, username: string, roles: string[], totpEnabled: boolean, createdAt: string): MockStaff {
@@ -333,6 +337,72 @@ export async function handleMockRequest(request: Request): Promise<Response> {
       if (act === "unblock") found.status = "active";
       else found.sessions = [];
       return json(userSummary(found));
+    }
+  }
+
+  if (url.pathname === "/admin/v1/plans" || url.pathname.startsWith("/admin/v1/plans/")) {
+    const readers = ["SuperAdmin", "Finance", "Support", "ReadOnly"];
+    const writer = caller.user.roles.some((r) => r === "SuperAdmin" || r === "Finance");
+    const plans = state().plans;
+    const ordered = () => [...plans].sort((a, b) => a.sortOrder - b.sortOrder || a.code.localeCompare(b.code) || b.version - a.version);
+    const stepUp = () => !caller.stepUpAt || Date.now() - caller.stepUpAt > 300_000;
+    const validate = (p: Partial<PlanRequestBody> | undefined, prefix: string) => {
+      const errors: Record<string, string[]> = {};
+      if (!p?.name?.trim()) errors[`${prefix}name`] = ["validation.required"];
+      if (p?.isFree && (p.monthly?.amount ?? 0) !== 0) errors[`${prefix}monthly`] = ["billing.plan.free_has_price"];
+      return errors;
+    };
+    const touch = (p: (typeof plans)[number], body: PlanRequestBody) => Object.assign(p, body, { updatedAt: new Date().toISOString() });
+    const m = /^\/admin\/v1\/plans(?:\/([0-9a-f-]{36})(?:\/(versions|publish|archive))?)?$/i.exec(url.pathname);
+    const plan = m?.[1] ? plans.find((p) => p.id === m[1]) : undefined;
+
+    if (request.method === "GET") {
+      if (!caller.user.roles.some((r) => readers.includes(r))) return problem(403, "auth.forbidden");
+      if (m?.[1]) return plan ? json(plan) : problem(404, "not_found");
+      const code = url.searchParams.get("code");
+      const status = url.searchParams.get("status");
+      const items = ordered().filter((p) => (!code || p.code === code) && (!status || p.status === status));
+      return json({ items, totalCount: items.length, page: 1, pageSize: 100 });
+    }
+    if (!writer) return problem(403, "auth.forbidden");
+    if (request.method === "POST" && !m?.[1]) {
+      const b = await body<{ code: string; plan: PlanRequestBody }>(request);
+      const errors = validate(b.plan, "plan.");
+      if (!/^[a-z][a-z0-9-]{1,29}$/.test(b.code ?? "")) errors.code = ["validation.invalid"];
+      if (Object.keys(errors).length) return problem(400, "validation.failed", errors);
+      if (plans.some((p) => p.code === b.code)) return problem(409, "billing.plan.code_taken");
+      const now = new Date().toISOString();
+      const created = { ...b.plan!, id: crypto.randomUUID(), code: b.code!, version: 1, status: "draft", createdAt: now, updatedAt: now, publishedAt: null };
+      plans.push(created);
+      return json(created, 201);
+    }
+    if (!plan) return problem(404, "not_found");
+    if (request.method === "PUT" && !m?.[2]) {
+      const b = await body<PlanRequestBody>(request);
+      const errors = validate(b, "");
+      if (Object.keys(errors).length) return problem(400, "validation.failed", errors);
+      if (plan.status !== "draft") return problem(409, "billing.plan.not_draft");
+      return json(touch(plan, b as PlanRequestBody));
+    }
+    if (request.method === "POST" && m?.[2] === "versions") {
+      if (plans.some((p) => p.code === plan.code && p.status === "draft")) return problem(409, "billing.plan.draft_exists");
+      const now = new Date().toISOString();
+      const next = { ...structuredClone(plan), id: crypto.randomUUID(), version: Math.max(...plans.filter((p) => p.code === plan.code).map((p) => p.version)) + 1, status: "draft", createdAt: now, updatedAt: now, publishedAt: null };
+      plans.push(next);
+      return json(next, 201);
+    }
+    if (request.method === "POST" && (m?.[2] === "publish" || m?.[2] === "archive")) {
+      if (stepUp()) return problem(403, "auth.step_up.required");
+      const reason = ((await body<{ reason: string | null }>(request)).reason ?? "").trim();
+      if ((m[2] === "archive" || reason) && (reason.length < 5 || reason.length > 300)) return problem(400, "validation.failed", { reason: [reason.length < 5 ? (reason ? "validation.too_short" : "validation.required") : "validation.too_long"] });
+      if (m[2] === "publish") {
+        if (plan.status !== "draft") return problem(409, "billing.plan.not_draft");
+        for (const p of plans) if (p.code === plan.code && p.status === "published") p.status = "archived";
+        plan.status = "published";
+        plan.publishedAt = new Date().toISOString();
+      } else plan.status = "archived";
+      plan.updatedAt = new Date().toISOString();
+      return json(plan);
     }
   }
 

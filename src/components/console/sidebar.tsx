@@ -14,7 +14,7 @@ export function isActive(pathname: string, href: string): boolean {
 export function Sidebar({ items, open, onNavigate }: { items: NavItem[]; open: boolean; onNavigate: () => void }) {
   const t = useTranslations("nav");
   const pathname = usePathname();
-  const sections = ["main", "support", "security", "platform", "account"] as const;
+  const sections = ["main", "support", "billing", "security", "platform", "account"] as const;
 
   return (
     <nav
