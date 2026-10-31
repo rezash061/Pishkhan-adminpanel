@@ -13,6 +13,7 @@ export const PERMISSIONS = [
   "workspaces.read",
   "workspaces.impersonate",
   "users.read",
+  "leads.read",
   "billing.read",
   "billing.refund",
   "ai.read",
@@ -32,6 +33,7 @@ const ROLE_PERMISSIONS: Record<StaffRole, readonly Permission[]> = {
     "workspaces.read",
     "workspaces.impersonate",
     "users.read",
+    "leads.read",
     "files.quarantine",
   ],
   Finance: ["dashboard.read", "billing.read", "billing.refund", "workspaces.read", "export"],
@@ -57,7 +59,7 @@ export function can(roles: readonly string[], permission: Permission): boolean {
   return permissionsFor(roles).has(permission);
 }
 
-export type NavIcon = "home" | "staff" | "audit" | "health" | "settings";
+export type NavIcon = "home" | "staff" | "audit" | "health" | "settings" | "leads" | "support";
 
 export interface NavItem {
   href: string;
@@ -65,12 +67,14 @@ export interface NavItem {
   labelKey: string;
   icon: NavIcon;
   permission: Permission | null;
-  section: "main" | "security" | "platform" | "account";
+  section: "main" | "support" | "security" | "platform" | "account";
 }
 
 // Only pages that exist are listed. Workspaces, billing, AI and content join as their AdminApi endpoints land (BE-1.12).
 export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/", labelKey: "home", icon: "home", permission: "dashboard.read", section: "main" },
+  { href: "/leads", labelKey: "leads", icon: "leads", permission: "leads.read", section: "main" },
+  { href: "/support/sessions", labelKey: "supportSessions", icon: "support", permission: "workspaces.impersonate", section: "support" },
   { href: "/security/audit-log", labelKey: "auditLog", icon: "audit", permission: "audit.read", section: "security" },
   { href: "/security/staff", labelKey: "staff", icon: "staff", permission: "staff.read", section: "security" },
   { href: "/platform/health", labelKey: "health", icon: "health", permission: "platform.health.read", section: "platform" },

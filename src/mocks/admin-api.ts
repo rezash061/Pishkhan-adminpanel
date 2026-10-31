@@ -3,7 +3,7 @@
 // codes and problem codes.
 // Fixtures are fake. Every mock password is "Pishkhan-admin-1234" and the TOTP code is always 123456.
 
-import { auditFixtures } from "./fixtures";
+import { auditFixtures, leadFixtures } from "./fixtures";
 
 const PASSWORD = "Pishkhan-admin-1234";
 const TOTP_CODE = "123456";
@@ -223,6 +223,27 @@ export async function handleMockRequest(request: Request): Promise<Response> {
       );
       return json({ items: filtered.slice((page - 1) * pageSize, page * pageSize), totalCount: filtered.length, page, pageSize });
     }
+  }
+
+  if (route === "GET /admin/v1/leads") {
+    if (!caller.user.roles.some((r) => r === "SuperAdmin" || r === "Support")) return problem(403, "auth.forbidden");
+    const q = url.searchParams;
+    const type = q.get("type");
+    if (type && type !== "waitlist" && type !== "contact") return problem(400, "validation.failed", { type: ["validation.invalid"] });
+    const page = Math.max(1, Number(q.get("page") ?? 1));
+    const pageSize = Math.min(100, Math.max(1, Number(q.get("pageSize") ?? 25)));
+    const filtered = leadFixtures.filter((l) => !type || l.type === type);
+    return json({ items: filtered.slice((page - 1) * pageSize, page * pageSize), totalCount: filtered.length, page, pageSize });
+  }
+
+  const support = request.method === "POST" ? /^\/admin\/v1\/workspaces\/([0-9a-f-]{36})\/support-sessions$/i.exec(url.pathname) : null;
+  if (support) {
+    if (!caller.user.roles.some((r) => r === "SuperAdmin" || r === "Support")) return problem(403, "auth.forbidden");
+    if (!caller.stepUpAt || Date.now() - caller.stepUpAt > 300_000) return problem(403, "auth.step_up.required");
+    const b = await body<{ reason: string; userId: string | null }>(request);
+    const reason = (b.reason ?? "").trim();
+    if (reason.length < 5 || reason.length > 300) return problem(400, "validation.failed", { "request.reason": [reason ? (reason.length < 5 ? "validation.too_short" : "validation.too_long") : "validation.required"] });
+    return json({ url: `http://localhost:3001/api/auth/impersonation?token=mock-${random()}`, expiresAt: new Date(Date.now() + 120_000).toISOString() });
   }
 
   return problem(404, "not_found");

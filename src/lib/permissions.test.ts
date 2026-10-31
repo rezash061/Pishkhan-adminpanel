@@ -5,8 +5,8 @@ const hrefs = (roles: string[]) => navFor(roles).map((i) => i.href);
 
 describe("navigation per role", () => {
   it.each([
-    ["SuperAdmin", ["/", "/security/audit-log", "/security/staff", "/platform/health", "/settings"]],
-    ["Support", ["/", "/security/audit-log", "/platform/health", "/settings"]],
+    ["SuperAdmin", ["/", "/leads", "/support/sessions", "/security/audit-log", "/security/staff", "/platform/health", "/settings"]],
+    ["Support", ["/", "/leads", "/support/sessions", "/security/audit-log", "/platform/health", "/settings"]],
     ["Finance", ["/", "/settings"]],
     ["ContentEditor", ["/", "/settings"]],
     ["AIOps", ["/", "/platform/health", "/settings"]],

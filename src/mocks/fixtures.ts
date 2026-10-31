@@ -1,4 +1,4 @@
-import type { AuditEntry } from "@/lib/api/types";
+import type { AuditEntry, Lead } from "@/lib/api/types";
 
 // Fake data only (overview section 8.7): fake workspaces, documentation IP ranges.
 const actors = [
@@ -38,5 +38,27 @@ export const auditFixtures: AuditEntry[] = Array.from({ length: 64 }, (_, i) => 
     ip: actor.type === "system" ? null : `192.0.2.${(i % 200) + 1}`,
     before: event.before ?? null,
     after: event.after ?? null,
+  };
+});
+
+const verticals = ["پوشاک", "آرایشی", "طلا و جواهر", "کلینیک زیبایی", "آموزش"];
+const dms = ["کمتر از ۱۰۰", "۱۰۰ تا ۵۰۰", "۵۰۰ تا ۲۰۰۰", "بیش از ۲۰۰۰"];
+
+export const leadFixtures: Lead[] = Array.from({ length: 37 }, (_, i) => {
+  const waitlist = i % 3 !== 2;
+  const at = new Date(Date.UTC(2026, 9, 30, 18, 0) - i * 3 * 3_600_000).toISOString();
+  return {
+    id: `01938f90-0000-7000-8000-${String(i + 1).padStart(12, "0")}`,
+    type: waitlist ? "waitlist" : "contact",
+    phone: `0912000${String(1000 + i).slice(-4)}`,
+    name: i % 4 === 0 ? null : `فروشگاه نمونه ${i + 1}`,
+    instagramHandle: waitlist ? `sample_shop_${i + 1}` : null,
+    vertical: waitlist ? (verticals[i % verticals.length] ?? null) : null,
+    monthlyDms: waitlist ? (dms[i % dms.length] ?? null) : null,
+    message: waitlist ? null : "سلام، برای فروشگاه‌مان دمو می‌خواهیم. لطفاً تماس بگیرید.",
+    utm: i % 2 === 0 ? { utm_source: "instagram", utm_campaign: "launch" } : ({} as Record<string, string>),
+    submissions: i % 5 === 0 ? 2 : 1,
+    createdAt: at,
+    updatedAt: at,
   };
 });

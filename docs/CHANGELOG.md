@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — leads and support sessions
+
+- Leads page (`/leads`, SuperAdmin and Support): website waitlist and contact submissions from `GET /admin/v1/leads`,
+  type filter in the URL, masked phones with reveal, detail with message and UTM.
+- Support session page (`/support/sessions`, Support): reason + step-up, then the one-time user-panel link from
+  `POST /admin/v1/workspaces/{id}/support-sessions` (backend PR #18), kept only in memory until used or expired.
+
 ## Unreleased — Phase 0 (AD-0.1 to AD-0.4)
 
 - Next.js 16 admin app with `(auth)` and `(console)` route groups, Persian RTL UI, self-hosted Vazirmatn font,
