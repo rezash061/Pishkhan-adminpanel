@@ -22,6 +22,7 @@ export const PERMISSIONS = [
   "billing.refund",
   "ai.read",
   "ai.manage",
+  "ai.providers.manage",
   "content.manage",
   "files.quarantine",
   "export",
@@ -65,7 +66,7 @@ export function can(roles: readonly string[], permission: Permission): boolean {
   return permissionsFor(roles).has(permission);
 }
 
-export type NavIcon = "home" | "staff" | "audit" | "health" | "settings" | "leads" | "support" | "workspaces" | "users" | "plans";
+export type NavIcon = "home" | "staff" | "audit" | "health" | "settings" | "leads" | "support" | "workspaces" | "users" | "plans" | "aiProviders" | "aiRoutes" | "aiPrompts" | "aiEvals";
 
 export interface NavItem {
   href: string;
@@ -73,7 +74,7 @@ export interface NavItem {
   labelKey: string;
   icon: NavIcon;
   permission: Permission | null;
-  section: "main" | "support" | "billing" | "security" | "platform" | "account";
+  section: "main" | "support" | "billing" | "ai" | "security" | "platform" | "account";
 }
 
 // Only pages that exist are listed. Billing, AI and content join as their AdminApi endpoints land (BE-1.12).
@@ -84,6 +85,10 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/leads", labelKey: "leads", icon: "leads", permission: "leads.read", section: "main" },
   { href: "/support/sessions", labelKey: "supportSessions", icon: "support", permission: "workspaces.impersonate", section: "support" },
   { href: "/billing/plans", labelKey: "plans", icon: "plans", permission: "plans.read", section: "billing" },
+  { href: "/ai/providers", labelKey: "aiProviders", icon: "aiProviders", permission: "ai.read", section: "ai" },
+  { href: "/ai/routes", labelKey: "aiRoutes", icon: "aiRoutes", permission: "ai.read", section: "ai" },
+  { href: "/ai/prompts", labelKey: "aiPrompts", icon: "aiPrompts", permission: "ai.read", section: "ai" },
+  { href: "/ai/evals", labelKey: "aiEvals", icon: "aiEvals", permission: "ai.read", section: "ai" },
   { href: "/security/audit-log", labelKey: "auditLog", icon: "audit", permission: "audit.read", section: "security" },
   { href: "/security/staff", labelKey: "staff", icon: "staff", permission: "staff.read", section: "security" },
   { href: "/platform/health", labelKey: "health", icon: "health", permission: "platform.health.read", section: "platform" },

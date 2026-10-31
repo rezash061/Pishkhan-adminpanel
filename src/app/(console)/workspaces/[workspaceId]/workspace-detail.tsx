@@ -115,6 +115,11 @@ export function WorkspaceDetailView({ workspaceId }: { workspaceId: string }) {
               <Row label={t("detail.timeZone")}>
                 <span dir="ltr">{w.timeZone}</span>
               </Row>
+              {w.plan ? (
+                <Row label={t("detail.plan")}>
+                  {w.plan.name ? `${w.plan.name}${w.plan.version ? ` (${t("detail.planVersion", { n: toPersianDigits(w.plan.version) })})` : ""}${w.plan.trial ? ` · ${t("detail.planTrial")}` : ""}` : t("detail.noPlan")}
+                </Row>
+              ) : null}
               <Row label={t("columns.createdAt")}>{formatJalaliDateTime(w.createdAt)}</Row>
               {w.deletionRequestedAt ? <Row label={t("detail.deletionRequestedAt")}>{formatJalaliDateTime(w.deletionRequestedAt)}</Row> : null}
               <Row label={t("detail.pendingInvitations")}>{toPersianDigits(w.pendingInvitations)}</Row>

@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased — AI operations
+
+- New "AI" sidebar section from backend PR #24 (`/admin/v1/ai`), readable by SuperAdmin, AIOps and ReadOnly.
+- Providers (`/ai/providers`): the providers in effect with kind, URL, whether a key is set, source and last test.
+  SuperAdmin adds or edits one (kind, URL, write-only key or clearing it, enabled) with a reason and step-up, and sends
+  a test request with a model name.
+- Model routes (`/ai/routes`): every task's fallback chain and its source. AIOps edits a chain on `/ai/routes/{task}`
+  (up to 5 steps; temperature, max output tokens, timeout, prices typed in Toman per million tokens and sent in Rial),
+  or goes back to the server configuration. Server field errors land on their step.
+- Prompts (`/ai/prompts`, `/ai/prompts/{key}`): versions newest first with the active one, a line diff against the base
+  version, writing a new version, starting an eval run (intent.classify) and activating a version with its latest run
+  and a reason. A refused activation names the failed gate checks.
+- Evals (`/ai/evals`): eval sets, importing JSON Lines (file or pasted) with the import report, runs filtered by set,
+  and a run page with totals, the gate and every case (failures first). Running runs refresh on their own.
+- The workspace page shows the plan again, from the detail's new `plan` field.
+
 ## Unreleased — workspace billing
 
 - "Subscription and usage" section on the workspace page, from `GET /admin/v1/workspaces/{id}/billing` (backend

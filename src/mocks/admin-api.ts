@@ -3,6 +3,7 @@
 // codes and problem codes.
 // Fixtures are fake. Every mock password is "Pishkhan-admin-1234" and the TOTP code is always 123456.
 
+import { handleAi, seedAi, type AiMockState } from "./ai";
 import { auditFixtures, leadFixtures, planFixtures, userFixtures, workspaceFixtures, workspaceOwnerPhones } from "./fixtures";
 
 type PlanRequestBody = Omit<(typeof planFixtures)[number], "id" | "code" | "version" | "status" | "createdAt" | "updatedAt" | "publishedAt">;
@@ -29,6 +30,7 @@ interface MockState {
   users: typeof userFixtures;
   plans: typeof planFixtures;
   subscriptions: MockSubscription[];
+  ai: AiMockState;
 }
 
 interface MockSubscription {
@@ -59,6 +61,7 @@ const seed = (): MockState => ({
   users: structuredClone(userFixtures),
   plans: structuredClone(planFixtures),
   subscriptions: seedSubscriptions(),
+  ai: seedAi(),
 });
 
 const DAY = 86_400_000;
@@ -360,7 +363,14 @@ export async function handleMockRequest(request: Request): Promise<Response> {
   if (workspace) {
     if (!caller.user.roles.some((r) => workspaceReaders.includes(r))) return problem(403, "auth.forbidden");
     const found = workspaceFixtures.find((w) => w.id === workspace[1]?.toLowerCase());
-    return found ? json(found) : problem(404, "not_found");
+    if (!found) return problem(404, "not_found");
+    const sub = db.subscriptions.find((x) => x.workspaceId === found.id && x.status === "active" && subscriptionState(x) !== "expired");
+    const plan = sub ? db.plans.find((p) => p.id === sub.planId) : db.plans.find((p) => p.isFree && p.status === "published");
+    return json({
+      ...found,
+      planId: plan?.id ?? null,
+      plan: { source: sub ? "subscription" : plan ? "free" : "none", planId: plan?.id ?? null, code: plan?.code ?? null, name: plan?.name ?? null, version: plan?.version ?? null, trial: sub?.trial ?? false, endsAt: sub?.endsAt ?? null },
+    });
   }
 
   if (route === "GET /admin/v1/users") {
@@ -548,6 +558,12 @@ export async function handleMockRequest(request: Request): Promise<Response> {
       Object.assign(active, { status: "ended", endedAt: new Date(now).toISOString(), endReason: "cancelled" });
       return json(subscriptionInfo(active));
     }
+  }
+
+  if (url.pathname.startsWith("/admin/v1/ai/")) {
+    const fresh = !!caller.stepUpAt && Date.now() - caller.stepUpAt <= 300_000;
+    const handled = await handleAi(request, url, db.ai, caller.user.roles, fresh, problem);
+    if (handled) return handled;
   }
 
   const support = request.method === "POST" ? /^\/admin\/v1\/workspaces\/([0-9a-f-]{36})\/support-sessions$/i.exec(url.pathname) : null;

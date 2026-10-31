@@ -129,6 +129,8 @@ export interface AdminWorkspaceDetail {
   timeZone: string;
   status: string;
   planId: string | null;
+  /** The current plan (backend PR #24); missing on older backends. `source`: subscription, free or none. */
+  plan?: { source: string; planId: string | null; code: string | null; name: string | null; version: number | null; trial: boolean; endsAt: string | null } | null;
   createdAt: string;
   deletionRequestedAt: string | null;
   deletionScheduledFor: string | null;
@@ -287,3 +289,133 @@ export interface GrantPlanRequest {
   days: number | null;
   reason: string;
 }
+
+// ---- AI operations (backend PR #24, /admin/v1/ai) ----
+
+/** A provider in effect. `source`: configuration or database. `kind`: openai (any OpenAI-compatible API) or fake. */
+export interface AiProvider {
+  name: string;
+  kind: string;
+  baseUrl: string | null;
+  hasApiKey: boolean;
+  enabled: boolean;
+  source: string;
+  lastTestError: string | null;
+  lastTestedAt: string | null;
+}
+
+/** `PUT /ai/providers/{name}` (SuperAdmin, step-up). `apiKey` null keeps the stored key. */
+export interface AiProviderRequest {
+  kind: string;
+  baseUrl: string | null;
+  apiKey: string | null;
+  clearApiKey: boolean;
+  enabled: boolean;
+  reason: string;
+}
+
+export interface AiProviderTestResult {
+  ok: boolean;
+  error: string | null;
+  latencyMs: number;
+}
+
+/** One step of a task's fallback chain. Prices are Rial per million tokens. */
+export interface AiRouteStep {
+  provider: string;
+  model: string;
+  temperature: number | null;
+  maxOutputTokens: number | null;
+  timeoutSeconds: number;
+  inputPricePerMillion: number | null;
+  outputPricePerMillion: number | null;
+}
+
+/** `source`: database, configuration or none. */
+export interface AiTaskRoutes {
+  task: string;
+  source: string;
+  routes: AiRouteStep[];
+}
+
+export const AI_TASKS = ["classify", "generate_reply", "extract_receipt", "transcribe", "embed", "summarize", "content"] as const;
+
+export interface PromptKey {
+  key: string;
+  activeVersion: string;
+  activeSource: string;
+  versionCount: number;
+}
+
+export interface EvalGateCheck {
+  name: string;
+  required: number;
+  actual: number | null;
+  passed: boolean;
+}
+
+/** `status`: running, completed or failed. */
+export interface EvalRun {
+  id: string;
+  setId: string;
+  setName: string;
+  task: string;
+  promptKey: string;
+  promptVersion: string;
+  route: string | null;
+  status: string;
+  caseCount: number;
+  errorCount: number;
+  intentAccuracy: number | null;
+  inputTokens: number;
+  outputTokens: number;
+  startedAt: string;
+  finishedAt: string | null;
+  gate: { passed: boolean; checks: EvalGateCheck[] };
+}
+
+export interface PromptVersion {
+  key: string;
+  version: string;
+  text: string;
+  source: string;
+  baseVersion: string | null;
+  active: boolean;
+  createdAt: string | null;
+  latestRun: EvalRun | null;
+}
+
+export interface EvalResult {
+  caseId: string;
+  ref: string;
+  vertical: string | null;
+  input: string;
+  expectedIntent: string | null;
+  predictedIntent: string | null;
+  correct: boolean | null;
+  route: string | null;
+  latencyMs: number;
+  error: string | null;
+}
+
+export interface EvalRunDetail {
+  run: EvalRun;
+  results: EvalResult[];
+}
+
+export interface EvalSet {
+  id: string;
+  name: string;
+  description: string | null;
+  caseCount: number;
+  updatedAt: string;
+}
+
+export interface EvalImportReport {
+  imported: number;
+  updated: number;
+  errors: string[];
+}
+
+/** The prompt the eval runner can score (backend PR #24). */
+export const EVAL_PROMPT_KEY = "intent.classify";

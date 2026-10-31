@@ -93,8 +93,14 @@ many subscriptions sit on each version (to warn before archiving), and a plan-di
 
 `GET /admin/v1/workspaces/{id}/billing` and `POST .../subscription`, `/subscription/extend`, `/subscription/cancel` back
 the "Subscription and usage" section on the workspace page. The panel sends `days` and never `endsAt`. The workspace
-detail's `planId` (from `tenancy.workspaces`) stays null while a subscription is active, so the panel no longer shows it
-and uses `/billing` instead. **Request:** drop `planId` from `AdminWorkspaceDetail`, or fill it from billing.
+detail's `planId` stayed null while a subscription was active; backend PR #24 fills it and adds `plan`, which the
+panel shows.
+
+## 1h. AI operations — backend PR #24
+
+Providers, routes, prompts and evals pages use `/admin/v1/ai`. The import sends the JSON Lines as
+`application/x-ndjson` through the BFF. **Notes:** saving a route step with only an input price stores the output price
+as 0 rather than null; the traces viewer waits for BE-1.4.
 
 ## 2. Platform health
 

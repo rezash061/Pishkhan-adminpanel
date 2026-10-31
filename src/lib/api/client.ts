@@ -13,6 +13,9 @@ function csrfToken(): string {
 export interface RequestOptions {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
+  /** A raw text body sent as is (for example NDJSON), instead of `body`. */
+  text?: string;
+  contentType?: string;
   idempotencyKey?: string;
   signal?: AbortSignal;
 }
@@ -22,13 +25,14 @@ export async function request<T>(url: string, options: RequestOptions = {}): Pro
   const method = options.method ?? "GET";
   const headers: Record<string, string> = { accept: "application/json" };
   if (method !== "GET") headers["x-csrf-token"] = csrfToken();
-  if (options.body !== undefined) headers["content-type"] = "application/json";
+  if (options.text !== undefined) headers["content-type"] = options.contentType ?? "text/plain; charset=utf-8";
+  else if (options.body !== undefined) headers["content-type"] = "application/json";
   if (options.idempotencyKey) headers["idempotency-key"] = options.idempotencyKey;
 
   const response = await fetch(url, {
     method,
     headers,
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    body: options.text !== undefined ? options.text : options.body === undefined ? undefined : JSON.stringify(options.body),
     credentials: "same-origin",
     cache: "no-store",
     signal: options.signal,
