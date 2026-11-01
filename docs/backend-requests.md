@@ -102,6 +102,12 @@ Providers, routes, prompts and evals pages use `/admin/v1/ai`. The import sends 
 `application/x-ndjson` through the BFF. **Notes:** saving a route step with only an input price stores the output price
 as 0 rather than null; the traces viewer waits for BE-1.4.
 
+## 1i. Website content — backend PR #31
+
+Entries, categories, redirects and preview use `/admin/v1/content`. **Notes:** there is no media library yet, so image
+blocks take a URL (site path or https). On main after PR #31 the AdminApi host fails to start in Development:
+`ReplyPipeline` needs `IKnowledgeSearch` and `ICatalogQueries`, which the AdminApi does not register.
+
 ## 2. Platform health
 
 The health page reads the AdminApi's own `/health/ready`, which today reports PostgreSQL and the two Redis

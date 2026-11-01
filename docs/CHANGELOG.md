@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased — website content
+
+- New "Website content" sidebar section from backend PR #31 (`/admin/v1/content`). ContentEditor and SuperAdmin edit;
+  Support and ReadOnly read.
+- Entries (`/content/entries`): search, kind and status filters kept in the URL, paged. The editor
+  (`/content/entries/new`, `/content/entries/{id}`) has title, a Persian-safe slug made from the title (fixed once the
+  entry was published), description, category (blog and help), a block editor (paragraph, headings, lists, callout,
+  quote and image as fields; the other blocks as JSON) and the fields of each kind (SEO, cover, keywords, tags,
+  version, the case study's consent and metrics). Saving sends the revision; a stale save shows a reload button.
+- Publishing: publish now or at a time, cancel a schedule, archive with an optional reason, delete an entry that was
+  never published, and preview the draft on the website (`NEXT_PUBLIC_WEBSITE_URL`). The page says when the draft
+  differs from the live version.
+- Categories (`/content/categories`) and redirects (`/content/redirects`). A category in use cannot be deleted.
+
 ## Unreleased — AI operations
 
 - New "AI" sidebar section from backend PR #24 (`/admin/v1/ai`), readable by SuperAdmin, AIOps and ReadOnly.
