@@ -89,6 +89,19 @@ user's own actions through `actor`); and revoking a single device (`DELETE /admi
 many subscriptions sit on each version (to warn before archiving), and a plan-diff or "changed fields" in the
 `plan.update` audit entry.
 
+## 1g. Workspace billing — backend PR #23
+
+`GET /admin/v1/workspaces/{id}/billing` and `POST .../subscription`, `/subscription/extend`, `/subscription/cancel` back
+the "Subscription and usage" section on the workspace page. The panel sends `days` and never `endsAt`. The workspace
+detail's `planId` stayed null while a subscription was active; backend PR #24 fills it and adds `plan`, which the
+panel shows.
+
+## 1h. AI operations — backend PR #24
+
+Providers, routes, prompts and evals pages use `/admin/v1/ai`. The import sends the JSON Lines as
+`application/x-ndjson` through the BFF. **Notes:** saving a route step with only an input price stores the output price
+as 0 rather than null; the traces viewer waits for BE-1.4.
+
 ## 2. Platform health
 
 The health page reads the AdminApi's own `/health/ready`, which today reports PostgreSQL and the two Redis

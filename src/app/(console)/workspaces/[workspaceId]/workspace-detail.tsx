@@ -17,6 +17,7 @@ import { formatJalaliDateTime, toPersianDigits } from "@/lib/format";
 import { ApiError } from "@/lib/problem";
 import { useErrorMessage } from "@/lib/use-error-message";
 import { channelLabel, ChannelStatusBadge, WorkspaceStatusBadge } from "../workspace-badges";
+import { WorkspaceBilling } from "./workspace-billing";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const actionClass = "inline-flex h-9 items-center gap-2 rounded-md border border-border bg-surface px-3 text-sm font-medium hover:bg-muted";
@@ -114,7 +115,11 @@ export function WorkspaceDetailView({ workspaceId }: { workspaceId: string }) {
               <Row label={t("detail.timeZone")}>
                 <span dir="ltr">{w.timeZone}</span>
               </Row>
-              <Row label={t("detail.plan")}>{w.planId ? <span dir="ltr" className="font-mono text-xs">{w.planId}</span> : t("detail.noPlan")}</Row>
+              {w.plan ? (
+                <Row label={t("detail.plan")}>
+                  {w.plan.name ? `${w.plan.name}${w.plan.version ? ` (${t("detail.planVersion", { n: toPersianDigits(w.plan.version) })})` : ""}${w.plan.trial ? ` · ${t("detail.planTrial")}` : ""}` : t("detail.noPlan")}
+                </Row>
+              ) : null}
               <Row label={t("columns.createdAt")}>{formatJalaliDateTime(w.createdAt)}</Row>
               {w.deletionRequestedAt ? <Row label={t("detail.deletionRequestedAt")}>{formatJalaliDateTime(w.deletionRequestedAt)}</Row> : null}
               <Row label={t("detail.pendingInvitations")}>{toPersianDigits(w.pendingInvitations)}</Row>
@@ -143,6 +148,8 @@ export function WorkspaceDetailView({ workspaceId }: { workspaceId: string }) {
           </CardContent>
         </Card>
       </div>
+
+      <WorkspaceBilling workspaceId={w.id} deleted={w.status === "deleted"} />
 
       <Card>
         <CardHeader>
