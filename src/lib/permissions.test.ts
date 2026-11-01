@@ -5,12 +5,12 @@ const hrefs = (roles: string[]) => navFor(roles).map((i) => i.href);
 
 describe("navigation per role", () => {
   it.each([
-    ["SuperAdmin", ["/", "/workspaces", "/users", "/leads", "/support/sessions", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/security/audit-log", "/security/staff", "/platform/health", "/settings"]],
-    ["Support", ["/", "/workspaces", "/users", "/leads", "/support/sessions", "/billing/plans", "/security/audit-log", "/platform/health", "/settings"]],
+    ["SuperAdmin", ["/", "/workspaces", "/users", "/leads", "/support/sessions", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/content/entries", "/content/categories", "/content/redirects", "/security/audit-log", "/security/staff", "/platform/health", "/settings"]],
+    ["Support", ["/", "/workspaces", "/users", "/leads", "/support/sessions", "/billing/plans", "/content/entries", "/content/categories", "/content/redirects", "/security/audit-log", "/platform/health", "/settings"]],
     ["Finance", ["/", "/workspaces", "/users", "/billing/plans", "/settings"]],
-    ["ContentEditor", ["/", "/settings"]],
+    ["ContentEditor", ["/", "/content/entries", "/content/categories", "/content/redirects", "/settings"]],
     ["AIOps", ["/", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/platform/health", "/settings"]],
-    ["ReadOnly", ["/", "/workspaces", "/users", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/platform/health", "/settings"]],
+    ["ReadOnly", ["/", "/workspaces", "/users", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/content/entries", "/content/categories", "/content/redirects", "/platform/health", "/settings"]],
   ])("%s sees %j", (role, expected) => {
     expect(hrefs([role])).toEqual(expected);
   });

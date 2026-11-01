@@ -419,3 +419,65 @@ export interface EvalImportReport {
 
 /** The prompt the eval runner can score (backend PR #24). */
 export const EVAL_PROMPT_KEY = "intent.classify";
+
+// ---- Website CMS (backend PR #31, /admin/v1/content) ----
+
+export const CONTENT_KINDS = ["page", "post", "help", "case_study", "legal", "faq"] as const;
+export const CONTENT_STATUSES = ["draft", "published", "archived"] as const;
+
+/** A body block: an object with an allowed `type`; strings are plain text. */
+export type ContentBlock = { type: string } & Record<string, unknown>;
+
+export interface ContentEntrySummary {
+  id: string;
+  kind: string;
+  slug: string;
+  status: string;
+  title: string;
+  category: string | null;
+  revision: number;
+  hasUnpublishedChanges: boolean;
+  publishedAt: string | null;
+  scheduledAt: string | null;
+  updatedAt: string;
+}
+
+/** The fields are the draft; `hasUnpublishedChanges` says whether it differs from the published copy. */
+export interface ContentEntry extends ContentEntrySummary {
+  description: string | null;
+  author: string | null;
+  body: ContentBlock[];
+  data: Record<string, unknown>;
+  publishedRevision: number | null;
+  firstPublishedAt: string | null;
+  createdAt: string;
+}
+
+export interface ContentEntryRequest {
+  kind?: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  author: string | null;
+  body: ContentBlock[];
+  data: Record<string, unknown>;
+  revision?: number;
+}
+
+export interface ContentCategory {
+  id: string;
+  kind: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  sortOrder: number;
+}
+
+export interface ContentRedirect {
+  id: string;
+  from: string;
+  to: string;
+  permanent: boolean;
+  createdAt: string;
+}

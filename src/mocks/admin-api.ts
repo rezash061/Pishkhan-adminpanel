@@ -4,6 +4,7 @@
 // Fixtures are fake. Every mock password is "Pishkhan-admin-1234" and the TOTP code is always 123456.
 
 import { handleAi, seedAi, type AiMockState } from "./ai";
+import { handleContent, seedContent, type ContentMockState } from "./content";
 import { auditFixtures, leadFixtures, planFixtures, userFixtures, workspaceFixtures, workspaceOwnerPhones } from "./fixtures";
 
 type PlanRequestBody = Omit<(typeof planFixtures)[number], "id" | "code" | "version" | "status" | "createdAt" | "updatedAt" | "publishedAt">;
@@ -31,6 +32,7 @@ interface MockState {
   plans: typeof planFixtures;
   subscriptions: MockSubscription[];
   ai: AiMockState;
+  content: ContentMockState;
 }
 
 interface MockSubscription {
@@ -55,6 +57,7 @@ const seed = (): MockState => ({
     staff("01938f5e-0000-7000-8000-000000000004", "aiops", ["AIOps"], true, "2026-10-07T11:00:00Z"),
     staff("01938f5e-0000-7000-8000-000000000005", "readonly", ["ReadOnly"], true, "2026-10-08T12:00:00Z"),
     staff("01938f5e-0000-7000-8000-000000000006", "newbie", ["Support"], false, "2026-10-28T07:00:00Z"),
+    staff("01938f5e-0000-7000-8000-000000000007", "editor", ["ContentEditor"], true, "2026-10-09T09:00:00Z"),
   ],
   enrollments: new Map(),
   revokedRefresh: new Set(),
@@ -62,6 +65,7 @@ const seed = (): MockState => ({
   plans: structuredClone(planFixtures),
   subscriptions: seedSubscriptions(),
   ai: seedAi(),
+  content: seedContent(),
 });
 
 const DAY = 86_400_000;
@@ -558,6 +562,11 @@ export async function handleMockRequest(request: Request): Promise<Response> {
       Object.assign(active, { status: "ended", endedAt: new Date(now).toISOString(), endReason: "cancelled" });
       return json(subscriptionInfo(active));
     }
+  }
+
+  if (url.pathname.startsWith("/admin/v1/content/")) {
+    const handled = await handleContent(request, url, db.content, caller.user.roles, problem);
+    if (handled) return handled;
   }
 
   if (url.pathname.startsWith("/admin/v1/ai/")) {
