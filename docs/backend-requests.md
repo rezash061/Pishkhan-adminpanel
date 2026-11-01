@@ -105,8 +105,8 @@ as 0 rather than null; the traces viewer waits for BE-1.4.
 ## 1i. Website content — backend PR #31
 
 Entries, categories, redirects and preview use `/admin/v1/content`. **Notes:** there is no media library yet, so image
-blocks take a URL (site path or https). On main after PR #31 the AdminApi host fails to start in Development:
-`ReplyPipeline` needs `IKnowledgeSearch` and `ICatalogQueries`, which the AdminApi does not register.
+blocks take a URL (site path or https). After PR #31 the AdminApi host failed to start in Development
+(`ReplyPipeline` needed Knowledge and Catalog); backend PR #32 fixes it.
 
 ## 2. Platform health
 
