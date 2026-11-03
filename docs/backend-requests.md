@@ -108,6 +108,32 @@ Entries, categories, redirects and preview use `/admin/v1/content`. **Notes:** t
 blocks take a URL (site path or https). After PR #31 the AdminApi host failed to start in Development
 (`ReplyPipeline` needed Knowledge and Catalog); backend PR #32 fixes it.
 
+## 1j. Industry templates — backend PR #40
+
+`GET/POST /admin/v1/industry-templates`, `GET/PUT /{id}`, `POST /{id}/versions`, `/publish` and `/archive` back the
+Industry templates list and editor (AD-2.2). The panel keeps hand-written DTOs in `src/lib/api/types.ts` (there is no
+generated client or copy of `admin.v1.json` in this repo); they match the PR's `AdminTemplateResponse`,
+`TemplateRequest` and `CreateTemplateRequest`. **Requests:**
+
+- **Concurrency on `PUT`.** There is no revision or `If-Match`, so two staff saving the same draft silently overwrite
+  each other. A `revision` like the CMS entries (409 on a stale save) would let the editor offer a reload.
+- **Lighter list rows.** `GET /industry-templates` returns the full `content` (about 10 KB per version) and runs the
+  validator for every row; the list only needs counts and the issue count. A summary shape (or `?fields=`) would help as
+  versions accumulate.
+- **Apply preview for staff.** Admin plan 4.6 asks for "preview apply to a sandbox workspace". There is no AdminApi
+  endpoint for it; the panel's preview (`GET /workspaces/{id}/templates/{templateId}`) only serves published templates
+  to workspace members.
+- **Usage before archiving.** How many workspaces applied each version (`template_applications`), so the archive dialog
+  can say what is affected.
+- **Archive is not idempotent.** Archiving an already archived version succeeds and writes another audit entry; a 409
+  `templates.not_published_or_draft` (or a no-op without audit) would be clearer.
+- **Issue keys with duplicate or empty item keys.** Issues name items by key (`faqs[x]`), so two items with the same
+  key, or an empty key (`flows[]`), cannot be pointed at individually. An index (`faqs[3]`) next to the key would let the
+  editor mark the right row.
+- **OpenAPI query names.** The list parameters are published as `Industry`, `Status`, `Page`, `PageSize` (PascalCase,
+  from `[AsParameters]`); binding is case-insensitive so the panel sends lower case, but generated clients would not.
+- **Storefront examples** (admin plan 4.6) are not part of `TemplateContent` yet.
+
 ## 2. Platform health
 
 The health page reads the AdminApi's own `/health/ready`, which today reports PostgreSQL and the two Redis

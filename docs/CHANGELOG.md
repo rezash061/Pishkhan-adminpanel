@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased — industry templates (AD-2.2)
+
+- New "Templates" sidebar section with "Industry templates" (`/templates/industry`) from backend PR #40 (BE-2.9,
+  `/admin/v1/industry-templates`). SuperAdmin, AIOps, Support and ReadOnly read; AIOps and SuperAdmin edit
+  (`templates.read`, `templates.manage`).
+- List: every version with industry, version, status badge (draft, published, archived), content counts and issue
+  count; industry and status filters and the page kept in the URL; `page`, `pageSize`, `totalCount` pagination.
+- Editor (`/templates/industry/{id}`): name and description; required facts and FAQs as rows (key checked like the
+  backend, reorder, add, remove, a count of «[...]» blanks in answers); the agent profile (name, tone
+  friendly/formal/playful, brand voice, never-say and handoff keyword lists, one phrase per line) or none; flows and rules
+  as left-to-right JSON with a live parse check, "format JSON", and a read-only summary (flow name, key, node and edge
+  count, node types, start node; rule name, trigger kind, keywords, actions and the `flowKey` it starts).
+- Saving a draft (`PUT`) shows the returned `issues` as a pre-publish checklist grouped by section, with Persian
+  explanations for the template, `templates.*`, `flow.*`, `automation.*` and `validation.*` codes and the raw issue
+  kept. Items with issues are also marked in the form. Publish stays disabled while there are issues or unsaved changes.
+- Actions: first draft for an industry without a template (industries that have one are disabled; 409
+  `templates.industry_taken` lands on the industry field), new version from any version (409 `templates.draft_exists`),
+  publish with step-up and an optional reason (a 422 `templates.invalid` shows the server's issues), archive with
+  step-up and a required reason of 5 to 300 characters.
+- Mock AdminApi: `/admin/v1/industry-templates` with the backend's five built-in templates (`src/mocks/template-seeds`,
+  copied from `Seeds/*.json`), a clothing draft with two issues and an archived cosmetics version, and a simplified copy
+  of the backend's content validator. Unit tests for the editor logic, issue rendering and the mock; Playwright tests
+  for fixing and publishing a draft, new version and archive, creating a first draft and read-only roles.
+
 ## Unreleased — website content
 
 - New "Website content" sidebar section from backend PR #31 (`/admin/v1/content`). ContentEditor and SuperAdmin edit;

@@ -5,18 +5,18 @@ const hrefs = (roles: string[]) => navFor(roles).map((i) => i.href);
 
 describe("navigation per role", () => {
   it.each([
-    ["SuperAdmin", ["/", "/workspaces", "/users", "/leads", "/support/sessions", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/content/entries", "/content/categories", "/content/redirects", "/security/audit-log", "/security/staff", "/platform/health", "/settings"]],
-    ["Support", ["/", "/workspaces", "/users", "/leads", "/support/sessions", "/billing/plans", "/content/entries", "/content/categories", "/content/redirects", "/security/audit-log", "/platform/health", "/settings"]],
+    ["SuperAdmin", ["/", "/workspaces", "/users", "/leads", "/support/sessions", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/templates/industry", "/content/entries", "/content/categories", "/content/redirects", "/security/audit-log", "/security/staff", "/platform/health", "/settings"]],
+    ["Support", ["/", "/workspaces", "/users", "/leads", "/support/sessions", "/billing/plans", "/templates/industry", "/content/entries", "/content/categories", "/content/redirects", "/security/audit-log", "/platform/health", "/settings"]],
     ["Finance", ["/", "/workspaces", "/users", "/billing/plans", "/settings"]],
     ["ContentEditor", ["/", "/content/entries", "/content/categories", "/content/redirects", "/settings"]],
-    ["AIOps", ["/", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/platform/health", "/settings"]],
-    ["ReadOnly", ["/", "/workspaces", "/users", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/content/entries", "/content/categories", "/content/redirects", "/platform/health", "/settings"]],
+    ["AIOps", ["/", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/templates/industry", "/platform/health", "/settings"]],
+    ["ReadOnly", ["/", "/workspaces", "/users", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/templates/industry", "/content/entries", "/content/categories", "/content/redirects", "/platform/health", "/settings"]],
   ])("%s sees %j", (role, expected) => {
     expect(hrefs([role])).toEqual(expected);
   });
 
   it("combines roles", () => {
-    expect(hrefs(["Finance", "AIOps"])).toEqual(["/", "/workspaces", "/users", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/platform/health", "/settings"]);
+    expect(hrefs(["Finance", "AIOps"])).toEqual(["/", "/workspaces", "/users", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/templates/industry", "/platform/health", "/settings"]);
   });
 
   it("grants nothing for unknown roles", () => {
@@ -28,6 +28,13 @@ describe("navigation per role", () => {
     for (const role of STAFF_ROLES) expect(can([role], "ai.providers.manage")).toBe(role === "SuperAdmin");
     expect(can(["AIOps"], "ai.manage")).toBe(true);
     expect(can(["ReadOnly"], "ai.manage")).toBe(false);
+  });
+
+  it("lets AIOps and SuperAdmin edit industry templates; Support and ReadOnly only read them", () => {
+    for (const role of STAFF_ROLES) {
+      expect(can([role], "templates.manage")).toBe(role === "SuperAdmin" || role === "AIOps");
+      expect(can([role], "templates.read")).toBe(["SuperAdmin", "AIOps", "Support", "ReadOnly"].includes(role));
+    }
   });
 
   it("reserves staff management for SuperAdmin", () => {

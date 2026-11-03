@@ -45,7 +45,7 @@ pnpm test:e2e                              # Playwright + axe, production build 
 | `src/app/api/bff/[...path]` | BFF proxy `/api/bff/x` → `/admin/v1/x` with the bearer token, CSRF and Origin checks |
 | `src/proxy.ts` | IP allowlist, nonce CSP, CSRF cookie, redirect to sign-in, single-flight token refresh |
 | `src/lib/permissions.ts` | Roles → permissions → navigation (the backend still enforces everything) |
-| `src/mocks/admin-api.ts` | In-process mock of the AdminApi used by `ADMIN_API_URL=mock` and the e2e suite |
+| `src/mocks/admin-api.ts` | In-process mock of the AdminApi used by `ADMIN_API_URL=mock` and the e2e suite (sections in `src/mocks/*.ts`; industry template fixtures are the backend seeds in `src/mocks/template-seeds`) |
 | `src/messages/fa.json` | Every UI string and backend error key translation |
 
 Security model: the browser never sees access or refresh tokens; cookies are `HttpOnly`, `SameSite=Strict` and

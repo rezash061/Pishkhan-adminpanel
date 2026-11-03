@@ -5,6 +5,7 @@
 
 import { handleAi, seedAi, type AiMockState } from "./ai";
 import { handleContent, seedContent, type ContentMockState } from "./content";
+import { handleTemplates, seedTemplates, type TemplatesMockState } from "./templates";
 import { auditFixtures, leadFixtures, planFixtures, userFixtures, workspaceFixtures, workspaceOwnerPhones } from "./fixtures";
 
 type PlanRequestBody = Omit<(typeof planFixtures)[number], "id" | "code" | "version" | "status" | "createdAt" | "updatedAt" | "publishedAt">;
@@ -33,6 +34,7 @@ interface MockState {
   subscriptions: MockSubscription[];
   ai: AiMockState;
   content: ContentMockState;
+  templates: TemplatesMockState;
 }
 
 interface MockSubscription {
@@ -66,6 +68,7 @@ const seed = (): MockState => ({
   subscriptions: seedSubscriptions(),
   ai: seedAi(),
   content: seedContent(),
+  templates: seedTemplates(),
 });
 
 const DAY = 86_400_000;
@@ -566,6 +569,12 @@ export async function handleMockRequest(request: Request): Promise<Response> {
 
   if (url.pathname.startsWith("/admin/v1/content/")) {
     const handled = await handleContent(request, url, db.content, caller.user.roles, problem);
+    if (handled) return handled;
+  }
+
+  if (url.pathname.startsWith("/admin/v1/industry-templates")) {
+    const fresh = !!caller.stepUpAt && Date.now() - caller.stepUpAt <= 300_000;
+    const handled = await handleTemplates(request, url, db.templates, caller.user.roles, fresh, problem);
     if (handled) return handled;
   }
 
