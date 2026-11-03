@@ -29,28 +29,65 @@ export function formatPercent(value: number | null | undefined): string {
   return `${toPersianDigits((Math.round(value * 1000) / 10).toString()).replace(".", "٫")}٪`;
 }
 
-function checkValue(check: EvalGateCheck, value: number | null): string {
+/** 0.05 → «۵» (percentage points, for the gap between two accuracies). */
+export function formatPoints(value: number | null | undefined): string {
   if (value == null) return "—";
-  return check.name === "cases" ? formatNumber(value) : formatPercent(value);
+  return toPersianDigits((Math.round(value * 1000) / 10).toString()).replace(".", "٫");
 }
+
+function checkValue(check: EvalGateCheck, value: number | null, points: (n: string) => string): string {
+  if (value == null) return "—";
+  if (check.name === "cases") return formatNumber(value);
+  if (check.name === "finglish_gap") return points(formatPoints(value));
+  return formatPercent(value);
+}
+
+/** Checks where the run must stay at or under the limit. */
+const AT_MOST = new Set(["error_rate", "finglish_gap"]);
 
 /** The eval gate: each check with what it needs and what the run got. */
 export function GateChecks({ run }: { run: EvalRun }) {
   const t = useTranslations("ai.gate");
+  const points = (n: string) => t("points", { n });
   return (
     <ul className="flex flex-col gap-1 text-sm" aria-label={t("title")}>
       {run.gate.checks.map((c) => (
-        <li key={c.name} className="flex flex-wrap items-center gap-2">
-          <Badge tone={c.passed ? "success" : "danger"}>{c.passed ? t("ok") : t("notOk")}</Badge>
-          <span>{t.has(`checks.${c.name}`) ? t(`checks.${c.name}`) : c.name}</span>
-          {c.name === "completed" ? null : (
-            <span className="text-muted-foreground">
-              {t(c.name === "error_rate" ? "atMost" : "atLeast", { required: checkValue(c, c.required), actual: checkValue(c, c.actual) })}
-            </span>
-          )}
+        <li key={c.name} className="flex flex-col gap-0.5">
+          <span className="flex flex-wrap items-center gap-2">
+            <Badge tone={c.passed ? "success" : "danger"}>{c.passed ? t("ok") : t("notOk")}</Badge>
+            <span>{t.has(`checks.${c.name}`) ? t(`checks.${c.name}`) : c.name}</span>
+            {c.name === "completed" ? null : (
+              <span className="text-muted-foreground">
+                {t(AT_MOST.has(c.name) ? "atMost" : "atLeast", { required: checkValue(c, c.required, points), actual: checkValue(c, c.actual, points) })}
+              </span>
+            )}
+          </span>
+          {t.has(`explain.${c.name}`) ? <span className="text-xs text-muted-foreground">{t(`explain.${c.name}`)}</span> : null}
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * Persian-script and Finglish intent accuracy side by side, with the number of Finglish cases (BE-2.3). «—» when a side
+ * had no cases, or the backend does not report it yet.
+ */
+export function FinglishSplit({ run, compact }: { run: EvalRun; compact?: boolean }) {
+  const t = useTranslations("ai.evals.finglish");
+  const cases = run.finglishCaseCount;
+  return (
+    <span className={compact ? "flex flex-col gap-0.5 text-xs whitespace-nowrap" : "flex flex-wrap gap-x-4 gap-y-1"}>
+      <span>
+        <span className="text-muted-foreground">{t("script")}: </span>
+        {formatPercent(run.scriptIntentAccuracy)}
+      </span>
+      <span>
+        <span className="text-muted-foreground">{t("finglish")}: </span>
+        {formatPercent(run.finglishIntentAccuracy)}
+        <span className="text-muted-foreground"> ({cases == null ? "—" : t("cases", { n: formatNumber(cases) })})</span>
+      </span>
+    </span>
   );
 }
 

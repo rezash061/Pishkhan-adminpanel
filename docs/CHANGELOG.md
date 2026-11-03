@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased — Finglish eval metrics (BE-2.3)
+
+- Eval runs from backend PR #44 (BE-2.3) carry `finglishCaseCount`, `finglishIntentAccuracy` and `scriptIntentAccuracy`.
+  The runs table has a "فارسی / فینگلیش" column, and the run page a "دقت به تفکیک خط" row. Both show Persian-script and
+  Finglish intent accuracy side by side, with the number of Finglish cases. A side without cases, or a backend without
+  the fields, shows «—».
+- The eval gate checklist names the `finglish_gap` check «فاصله دقت فینگلیش با فارسی». It shows the allowed gap and the
+  run's gap in points, for example «حداکثر ۵ امتیاز؛ این اجرا: ۱۶٫۷ امتیاز», and explains the check. The backend adds the
+  check only when a set has both kinds of case, and the panel shows whatever checks it gets.
+- Per-case results mark Finglish inputs with a «فینگلیش» badge (`src/lib/finglish.ts`). This uses the backend's
+  Latin-letter test, at least 70% of the letters Latin. The backend's word lists are not used, so plain English input
+  is marked too.
+- The prompt registry lists keys from the API. The new `text.transliterate` and `knowledge.onboarding` show up like the
+  others, and the mock has both. Only the eval runner is limited to `intent.classify`, which matches the backend.
+- Mock AdminApi: a `finglish` set made of the 30 cases of the backend's `samples/finglish.jsonl`, and a `mixed-fa` set
+  (12 script and 8 Finglish cases) with one run that fails the gap check and one that passes. Accuracies are computed
+  per case, so the split, the gate and the results list agree.
 ## Unreleased — industry templates (AD-2.2)
 
 - New "Templates" sidebar section with "Industry templates" (`/templates/industry`) from backend PR #40 (BE-2.9,

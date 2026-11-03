@@ -1,9 +1,12 @@
 // Mock state and handlers for /admin/v1/ai (backend PR #24). Used by src/mocks/admin-api.ts.
 
 import type { AiProvider, AiRouteStep, EvalResult, EvalRun, EvalSet, PromptVersion } from "@/lib/api/types";
+import { looksFinglish } from "@/lib/finglish";
+// The 30 cases of the backend's tools/Pishkhan.EvalRunner/samples/finglish.jsonl (backend PR #44).
+import finglishSamples from "./eval-samples/finglish.json";
 
 const TASKS = ["classify", "generate_reply", "extract_receipt", "transcribe", "embed", "summarize", "content"];
-const GATE = { minCases: 1, minAccuracy: 0.85, maxErrorRate: 0.05 };
+const GATE = { minCases: 1, minAccuracy: 0.85, maxErrorRate: 0.05, maxFinglishGap: 0.05 };
 const RUN_SECONDS = 1.5;
 
 interface MockCase {
@@ -14,9 +17,11 @@ interface MockCase {
   expectedIntent: string | null;
 }
 
-interface MockRun extends Omit<EvalRun, "gate" | "setName"> {
-  /** Share of cases answered correctly once the run finishes. */
+interface MockRun extends Omit<EvalRun, "gate" | "setName" | "finglishCaseCount" | "finglishIntentAccuracy" | "scriptIntentAccuracy"> {
+  /** Share of Persian-script cases answered correctly once the run finishes. */
   targetAccuracy: number;
+  /** Share of Finglish cases answered correctly; defaults to targetAccuracy. */
+  finglishTarget?: number;
 }
 
 export interface AiMockState {
@@ -61,9 +66,15 @@ function cases(prefix: string, count: number, vertical: string): MockCase[] {
   }));
 }
 
+function finglishCases(prefix: string, refs: readonly string[] | null): MockCase[] {
+  return finglishSamples
+    .filter((c) => !refs || refs.includes(c.ref))
+    .map((c, i) => ({ id: `01938f80-0000-7000-8000-${prefix}${String(i + 1).padStart(10, "0")}`, ref: c.ref, vertical: c.vertical, input: c.input, expectedIntent: c.expectedIntent }));
+}
+
 export function seedAi(): AiMockState {
   const at = (iso: string) => new Date(iso).toISOString();
-  const run = (n: number, setId: string, version: string, accuracy: number, caseCount: number, startedAt: string): MockRun => ({
+  const run = (n: number, setId: string, version: string, accuracy: number, caseCount: number, startedAt: string, finglishTarget?: number): MockRun => ({
     id: `01938f81-0000-7000-8000-0000000000${String(n).padStart(2, "0")}`,
     setId,
     task: "classify",
@@ -79,9 +90,13 @@ export function seedAi(): AiMockState {
     startedAt: at(startedAt),
     finishedAt: new Date(Date.parse(startedAt) + 40_000).toISOString(),
     targetAccuracy: accuracy,
+    finglishTarget,
   });
   const fashion = "01938f82-0000-7000-8000-000000000001";
   const clinic = "01938f82-0000-7000-8000-000000000002";
+  const finglish = "01938f82-0000-7000-8000-000000000003";
+  const mixed = "01938f82-0000-7000-8000-000000000004";
+  const mixedFinglish = ["fg-0001", "fg-0002", "fg-0005", "fg-0006", "fg-0013", "fg-0016", "fg-0018", "fg-0022"];
   return {
     providers: [
       { name: "avalai", kind: "openai", baseUrl: "https://api.avalai.ir/v1", hasApiKey: true, enabled: true, source: "database", lastTestError: null, lastTestedAt: at("2026-10-30T08:00:00Z") },
@@ -95,14 +110,27 @@ export function seedAi(): AiMockState {
       { key: "intent.classify", version: "1", text: "You classify one Instagram DM for a Persian shop.\nReturn one intent: price, availability, shipping, order_status, complaint, greeting.\nMessage: {{message}}", source: "configuration", baseVersion: null, createdAt: null },
       { key: "intent.classify", version: "2", text: "You classify one Instagram DM for a Persian shop.\nReturn exactly one intent: price, availability, shipping, order_status, complaint, greeting.\nIf unsure, answer greeting.\nMessage: {{message}}", source: "database", baseVersion: "1", createdAt: at("2026-10-29T10:00:00Z") },
       { key: "intent.classify", version: "3", text: "Classify the DM.\nMessage: {{message}}", source: "database", baseVersion: "2", createdAt: at("2026-10-30T10:00:00Z") },
+      { key: "text.transliterate", version: "1", text: "The next message is from a customer of an Iranian online shop, written in Finglish (Persian in Latin letters), possibly mixed with English words and Persian script. Rewrite it in standard Persian script, word for word, keeping the meaning, numbers, sizes, product names and English brand names as they are. Do not answer it, translate it into formal language or add anything. Reply with json only: {\"persian\": the rewritten text}.", source: "configuration", baseVersion: null, createdAt: null },
+      { key: "knowledge.onboarding", version: "1", text: "You help the owner of an Iranian online shop teach their AI sales assistant. The owner was asked: \"{{owner_question}}\" (the fact: {{fact}}). Their answer is the next message, in their own words, often informal Persian. Write one FAQ entry for customers from it. Reply with json only: {\"question\": ..., \"answer\": ...}. Use only what the owner said.", source: "configuration", baseVersion: null, createdAt: null },
       { key: "reply.system", version: "1", text: "تو دستیار فروش {{shop}} هستی. کوتاه و مؤدبانه پاسخ بده.", source: "configuration", baseVersion: null, createdAt: null },
     ],
     activations: {},
     sets: [
       { id: fashion, name: "fashion-fa", description: "پیام‌های ناشناس‌شدهٔ فروشگاه‌های پوشاک", updatedAt: at("2026-10-28T09:00:00Z"), cases: cases("0001", 12, "clothing") },
       { id: clinic, name: "clinic-fa", description: null, updatedAt: at("2026-10-28T09:30:00Z"), cases: cases("0002", 6, "beauty_clinic") },
+      { id: finglish, name: "finglish", description: "نمونه‌های فینگلیش پنج صنف (samples/finglish.jsonl)", updatedAt: at("2026-11-03T08:00:00Z"), cases: finglishCases("0003", null) },
+      { id: mixed, name: "mixed-fa", description: "پوشاک: فارسی و فینگلیش", updatedAt: at("2026-11-03T08:10:00Z"), cases: [...cases("0004", 12, "clothing"), ...finglishCases("0005", mixedFinglish)] },
     ],
-    runs: [run(1, fashion, "1", 0.8333, 12, "2026-10-28T10:00:00Z"), run(2, fashion, "2", 0.9167, 12, "2026-10-29T11:00:00Z"), run(3, fashion, "3", 0.75, 12, "2026-10-30T11:00:00Z")],
+    runs: [
+      run(1, fashion, "1", 0.8333, 12, "2026-10-28T10:00:00Z"),
+      run(2, fashion, "2", 0.9167, 12, "2026-10-29T11:00:00Z"),
+      run(3, fashion, "3", 0.75, 12, "2026-10-30T11:00:00Z"),
+      // Mixed set (12 script + 8 Finglish): version 1 trails on Finglish by 16.7 points (gap check fails), version 2 by 4.2 (passes).
+      run(4, mixed, "1", 0.9167, 20, "2026-10-27T09:00:00Z", 0.75),
+      run(5, mixed, "2", 0.9167, 20, "2026-10-27T10:00:00Z", 0.875),
+      // Finglish only: no Persian-script side, so no gap check.
+      run(6, finglish, "2", 0.8667, 30, "2026-10-27T11:00:00Z"),
+    ],
   };
 }
 
@@ -110,28 +138,67 @@ const json = (body: unknown, status = 200) => Response.json(body, { status });
 
 type Problem = (status: number, code: string, errors?: Record<string, string[]>) => Response;
 
-function settle(r: MockRun) {
+/** Which cases a finished run got wrong: the first ones of each kind, so the Finglish and script accuracies match their targets. */
+function scoreCases(s: AiMockState, r: MockRun): Map<string, boolean> {
+  const set = s.sets.find((x) => x.id === r.setId);
+  const scored = (set?.cases ?? []).filter((c) => c.expectedIntent);
+  const byKind = (finglish: boolean) => scored.filter((c) => looksFinglish(c.input) === finglish);
+  const out = new Map<string, boolean>();
+  for (const [list, target] of [
+    [byKind(false), r.targetAccuracy],
+    [byKind(true), r.finglishTarget ?? r.targetAccuracy],
+  ] as const) {
+    const wrong = list.length - Math.round(target * list.length);
+    list.forEach((c, i) => out.set(c.id, i >= wrong));
+  }
+  return out;
+}
+
+function settle(s: AiMockState, r: MockRun) {
   if (r.status === "running" && Date.now() - Date.parse(r.startedAt) > RUN_SECONDS * 1000) {
     r.status = "completed";
-    r.intentAccuracy = r.caseCount ? Math.round((Math.round(r.targetAccuracy * r.caseCount) / r.caseCount) * 10_000) / 10_000 : null;
     r.finishedAt = new Date().toISOString();
     r.inputTokens = r.caseCount * 410;
     r.outputTokens = r.caseCount * 6;
   }
 }
 
+/** The run's Finglish split, like the backend's EvalService: cases are Finglish by the Latin-letter check. */
+function finglishSplit(s: AiMockState, r: MockRun) {
+  const set = s.sets.find((x) => x.id === r.setId);
+  const finglishCaseCount = (set?.cases ?? []).filter((c) => looksFinglish(c.input)).length;
+  if (r.status !== "completed") return { finglishCaseCount, finglishIntentAccuracy: null, scriptIntentAccuracy: null };
+  const score = scoreCases(s, r);
+  const accuracy = (finglish: boolean) => {
+    const list = (set?.cases ?? []).filter((c) => c.expectedIntent && looksFinglish(c.input) === finglish);
+    return list.length ? Math.round((list.filter((c) => score.get(c.id)).length / list.length) * 10_000) / 10_000 : null;
+  };
+  return { finglishCaseCount, finglishIntentAccuracy: accuracy(true), scriptIntentAccuracy: accuracy(false) };
+}
+
 function toRun(s: AiMockState, r: MockRun): EvalRun {
-  settle(r);
+  settle(s, r);
+  if (r.status === "completed") {
+    // Overall accuracy follows the per-case scores, so it always agrees with the Finglish split and the results list.
+    const results = [...scoreCases(s, r).values()];
+    r.intentAccuracy = results.length ? Math.round((results.filter(Boolean).length / results.length) * 10_000) / 10_000 : null;
+  }
   const errorRate = r.caseCount ? r.errorCount / r.caseCount : null;
+  const split = finglishSplit(s, r);
   const checks = [
     { name: "completed", required: 1, actual: r.status === "completed" ? 1 : 0, passed: r.status === "completed" },
     { name: "cases", required: GATE.minCases, actual: r.caseCount, passed: r.caseCount >= GATE.minCases },
     { name: "intent_accuracy", required: GATE.minAccuracy, actual: r.intentAccuracy, passed: (r.intentAccuracy ?? -1) >= GATE.minAccuracy },
     { name: "error_rate", required: GATE.maxErrorRate, actual: errorRate, passed: errorRate != null && errorRate <= GATE.maxErrorRate },
   ];
-  const { targetAccuracy: _t, ...rest } = r;
+  if (split.finglishIntentAccuracy != null && split.scriptIntentAccuracy != null) {
+    const gap = Math.round(Math.max(0, split.scriptIntentAccuracy - split.finglishIntentAccuracy) * 10_000) / 10_000;
+    checks.push({ name: "finglish_gap", required: GATE.maxFinglishGap, actual: gap, passed: gap <= GATE.maxFinglishGap });
+  }
+  const { targetAccuracy: _t, finglishTarget: _f, ...rest } = r;
   void _t;
-  return { ...rest, setName: s.sets.find((x) => x.id === r.setId)?.name ?? "", gate: { passed: r.status === "completed" && checks.every((c) => c.passed), checks } };
+  void _f;
+  return { ...rest, ...split, setName: s.sets.find((x) => x.id === r.setId)?.name ?? "", gate: { passed: r.status === "completed" && checks.every((c) => c.passed), checks } };
 }
 
 function activeVersion(s: AiMockState, key: string): string {
@@ -340,7 +407,7 @@ export async function handleAi(request: Request, url: URL, s: AiMockState, roles
     if (!run) return problem(404, "not_found");
     const detail = toRun(s, run);
     const set = s.sets.find((x) => x.id === run.setId);
-    const wrong = run.status === "completed" ? run.caseCount - Math.round((run.intentAccuracy ?? 0) * run.caseCount) : 0;
+    const score = scoreCases(s, run);
     const results: EvalResult[] =
       run.status === "completed"
         ? (set?.cases ?? []).map((c, i) => ({
@@ -349,8 +416,8 @@ export async function handleAi(request: Request, url: URL, s: AiMockState, roles
             vertical: c.vertical,
             input: c.input,
             expectedIntent: c.expectedIntent,
-            predictedIntent: i < wrong ? (c.expectedIntent === "greeting" ? "price" : "greeting") : c.expectedIntent,
-            correct: c.expectedIntent ? i >= wrong : null,
+            predictedIntent: c.expectedIntent && !score.get(c.id) ? (c.expectedIntent === "greeting" ? "price" : "greeting") : c.expectedIntent,
+            correct: c.expectedIntent ? (score.get(c.id) ?? null) : null,
             route: run.route,
             latencyMs: 300 + ((i * 37) % 200),
             error: null,

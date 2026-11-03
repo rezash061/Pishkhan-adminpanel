@@ -12,7 +12,7 @@ import { admin } from "@/lib/api/client";
 import type { EvalRun, EvalSet, PagedResult } from "@/lib/api/types";
 import { formatJalaliDateTime, formatNumber, toPersianDigits } from "@/lib/format";
 import { useErrorMessage } from "@/lib/use-error-message";
-import { formatPercent, GateBadge, RunStatusBadge } from "../ai-shared";
+import { FinglishSplit, formatPercent, GateBadge, RunStatusBadge } from "../ai-shared";
 
 const PAGE_SIZE = 20;
 
@@ -70,6 +70,7 @@ export function EvalRunsTable() {
             <Th>{t("columns.set")}</Th>
             <Th>{t("columns.status")}</Th>
             <Th>{t("columns.accuracy")}</Th>
+            <Th>{t("columns.split")}</Th>
             <Th>{t("columns.cases")}</Th>
             <Th>{t("columns.errors")}</Th>
             <Th>{t("columns.route")}</Th>
@@ -78,14 +79,14 @@ export function EvalRunsTable() {
         <tbody>
           {isPending && !error ? (
             <tr>
-              <Td colSpan={8} className="py-6 text-center text-muted-foreground">
+              <Td colSpan={9} className="py-6 text-center text-muted-foreground">
                 {tc("loading")}
               </Td>
             </tr>
           ) : null}
           {data && data.items.length === 0 ? (
             <tr>
-              <Td colSpan={8} className="py-6 text-center text-muted-foreground">
+              <Td colSpan={9} className="py-6 text-center text-muted-foreground">
                 {t("noRuns")}
               </Td>
             </tr>
@@ -115,6 +116,9 @@ export function EvalRunsTable() {
                 </div>
               </Td>
               <Td>{formatPercent(r.intentAccuracy)}</Td>
+              <Td>
+                <FinglishSplit run={r} compact />
+              </Td>
               <Td>{formatNumber(r.caseCount)}</Td>
               <Td>{formatNumber(r.errorCount)}</Td>
               <Td>
