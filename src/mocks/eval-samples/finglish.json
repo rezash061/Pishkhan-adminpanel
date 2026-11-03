@@ -1,0 +1,182 @@
+[
+ {
+  "ref": "fg-0001",
+  "vertical": "clothing",
+  "input": "salam gheymatesh chande?",
+  "expectedIntent": "price_question"
+ },
+ {
+  "ref": "fg-0002",
+  "vertical": "clothing",
+  "input": "in manto size 40 mojood dari?",
+  "expectedIntent": "availability"
+ },
+ {
+  "ref": "fg-0003",
+  "vertical": "clothing",
+  "input": "rang meshki ham dare?",
+  "expectedIntent": "availability"
+ },
+ {
+  "ref": "fg-0004",
+  "vertical": "clothing",
+  "input": "mikham 2 ta sefaresh bedam",
+  "expectedIntent": "order"
+ },
+ {
+  "ref": "fg-0005",
+  "vertical": "clothing",
+  "input": "ersal be shiraz chand rooz mikeshe?",
+  "expectedIntent": "shipping"
+ },
+ {
+  "ref": "fg-0006",
+  "vertical": "clothing",
+  "input": "lebasi ke ferestadin pare boode, kheili narahatam",
+  "expectedIntent": "complaint"
+ },
+ {
+  "ref": "fg-0007",
+  "vertical": "clothing",
+  "input": "takhfif nadarin baraye 3 ta?",
+  "expectedIntent": "discount_request"
+ },
+ {
+  "ref": "fg-0008",
+  "vertical": "cosmetics",
+  "input": "in kerem asle?",
+  "expectedIntent": "other"
+ },
+ {
+  "ref": "fg-0009",
+  "vertical": "cosmetics",
+  "input": "gheymate rozhlab chande",
+  "expectedIntent": "price_question"
+ },
+ {
+  "ref": "fg-0010",
+  "vertical": "cosmetics",
+  "input": "baraye poost charb chi pishnahad mikonid?",
+  "expectedIntent": "other"
+ },
+ {
+  "ref": "fg-0011",
+  "vertical": "cosmetics",
+  "input": "sefaresh dadam vali hanooz naresideh, 10 roze",
+  "expectedIntent": "complaint"
+ },
+ {
+  "ref": "fg-0012",
+  "vertical": "cosmetics",
+  "input": "mojoodi darid?",
+  "expectedIntent": "availability"
+ },
+ {
+  "ref": "fg-0013",
+  "vertical": "jewelry",
+  "input": "gheymat emrooz in angoshtar chande?",
+  "expectedIntent": "price_question"
+ },
+ {
+  "ref": "fg-0014",
+  "vertical": "jewelry",
+  "input": "ojratesh chand darsade?",
+  "expectedIntent": "price_question"
+ },
+ {
+  "ref": "fg-0015",
+  "vertical": "jewelry",
+  "input": "mishe ghesti kharid?",
+  "expectedIntent": "other"
+ },
+ {
+  "ref": "fg-0016",
+  "vertical": "jewelry",
+  "input": "mikham ba forooshande sohbat konam",
+  "expectedIntent": "human_request"
+ },
+ {
+  "ref": "fg-0017",
+  "vertical": "beauty_clinic",
+  "input": "salam vaght khali barai farda darid?",
+  "expectedIntent": "availability"
+ },
+ {
+  "ref": "fg-0018",
+  "vertical": "beauty_clinic",
+  "input": "hazine leyzer chande?",
+  "expectedIntent": "price_question"
+ },
+ {
+  "ref": "fg-0019",
+  "vertical": "beauty_clinic",
+  "input": "nobat mikham baraye pakdasazi",
+  "expectedIntent": "order"
+ },
+ {
+  "ref": "fg-0020",
+  "vertical": "beauty_clinic",
+  "input": "bad az leyzer poostam soukhte",
+  "expectedIntent": "complaint"
+ },
+ {
+  "ref": "fg-0021",
+  "vertical": "courses",
+  "input": "doreh kei shoroo mishe?",
+  "expectedIntent": "other"
+ },
+ {
+  "ref": "fg-0022",
+  "vertical": "courses",
+  "input": "shahrie doreh chande?",
+  "expectedIntent": "price_question"
+ },
+ {
+  "ref": "fg-0023",
+  "vertical": "courses",
+  "input": "sabtenam mikonam, chetori pardakht konam?",
+  "expectedIntent": "order"
+ },
+ {
+  "ref": "fg-0024",
+  "vertical": "courses",
+  "input": "madrak midid?",
+  "expectedIntent": "other"
+ },
+ {
+  "ref": "fg-0025",
+  "vertical": "clothing",
+  "input": "salaam khoobi?",
+  "expectedIntent": "greeting"
+ },
+ {
+  "ref": "fg-0026",
+  "vertical": "cosmetics",
+  "input": "mersi kheili mamnoon",
+  "expectedIntent": "other"
+ },
+ {
+  "ref": "fg-0027",
+  "vertical": "clothing",
+  "input": "lotfan ye adam vaghei javab bede",
+  "expectedIntent": "human_request"
+ },
+ {
+  "ref": "fg-0028",
+  "vertical": "jewelry",
+  "input": "pool variz kardam, resid ro befrestam?",
+  "expectedIntent": "order"
+ },
+ {
+  "ref": "fg-0029",
+  "vertical": "clothing",
+  "input": "peyk baraye tehran darid?",
+  "expectedIntent": "shipping"
+ },
+ {
+  "ref": "fg-0030",
+  "vertical": "courses",
+  "input": "takhfif daneshjooii darid?",
+  "expectedIntent": "discount_request"
+ }
+]

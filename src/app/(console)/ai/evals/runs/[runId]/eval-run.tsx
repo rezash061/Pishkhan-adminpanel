@@ -13,8 +13,9 @@ import { admin } from "@/lib/api/client";
 import type { EvalRunDetail } from "@/lib/api/types";
 import { formatJalaliDateTime, formatNumber, toPersianDigits } from "@/lib/format";
 import { ApiError } from "@/lib/problem";
+import { looksFinglish } from "@/lib/finglish";
 import { useErrorMessage } from "@/lib/use-error-message";
-import { formatPercent, GateBadge, GateChecks, RunStatusBadge } from "../../../ai-shared";
+import { FinglishSplit, formatPercent, GateBadge, GateChecks, RunStatusBadge } from "../../../ai-shared";
 
 /** One eval run: totals, the gate and every case, failures first. Polls while the run is going. */
 export function EvalRunView({ runId }: { runId: string }) {
@@ -56,6 +57,10 @@ export function EvalRunView({ runId }: { runId: string }) {
                 </dd>
                 <dt className="text-muted-foreground">{t("columns.accuracy")}</dt>
                 <dd>{formatPercent(run.intentAccuracy)}</dd>
+                <dt className="text-muted-foreground">{t("finglish.label")}</dt>
+                <dd>
+                  <FinglishSplit run={run} />
+                </dd>
                 <dt className="text-muted-foreground">{t("columns.cases")}</dt>
                 <dd>{t("casesErrors", { cases: formatNumber(run.caseCount), errors: formatNumber(run.errorCount) })}</dd>
                 <dt className="text-muted-foreground">{t("tokens")}</dt>
@@ -110,6 +115,11 @@ export function EvalRunView({ runId }: { runId: string }) {
                     </Td>
                     <Td className="max-w-md">
                       <span dir="auto">{r.input}</span>
+                      {looksFinglish(r.input) ? (
+                        <Badge tone="info" className="ms-2 align-middle" title={t("finglish.badgeTitle")}>
+                          {t("finglish.badge")}
+                        </Badge>
+                      ) : null}
                     </Td>
                     <Td>
                       <span dir="ltr" className="font-mono text-xs">

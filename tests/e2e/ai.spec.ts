@@ -127,7 +127,7 @@ test("AI prompts: the eval gate decides which version can go live", async ({ pag
 test("AI evals: import JSON Lines and read a run, failures first", async ({ page }) => {
   await login(page, "aiops");
   await page.goto("/ai/evals");
-  await expect(page.getByRole("table").last().locator("tbody tr")).toHaveCount(3);
+  await expect(page.getByRole("table").last().locator("tbody tr")).toHaveCount(6);
   await page.getByLabel("نام مجموعه").fill("Bad Name");
   await page.getByLabel("خطوط JSON").fill('{"ref":"a1","input":"قیمت؟","expected":{"intent":"price"}}\nnot json\n{"ref":"a2","messages":[{"role":"customer","text":"سلام"}]}');
   await page.getByRole("button", { name: "وارد کردن" }).click();
@@ -138,11 +138,38 @@ test("AI evals: import JSON Lines and read a run, failures first", async ({ page
   await expect(page.getByRole("table").first().getByText("jewelry-fa")).toBeVisible();
   await expectNoA11yViolations(page);
 
-  await page.getByRole("table").last().locator("tbody tr").last().getByRole("link").click();
+  // The oldest fashion-fa run (version 1, 83.3%).
+  await page.getByRole("table").last().locator("tbody tr").filter({ hasText: "fashion-fa" }).last().getByRole("link").click();
   await expect(page.getByTestId("run-summary")).toContainText("۸۳٫۳٪");
   const rows = page.getByRole("table").locator("tbody tr");
   await expect(rows).toHaveCount(12);
   await expect(rows.first()).toContainText("نادرست");
   await expect(rows.last()).toContainText("درست");
   await expectNoA11yViolations(page);
+});
+
+test("AI evals: Finglish and Persian accuracy side by side, with the gap check", async ({ page }) => {
+  await login(page, "readonly");
+  await page.goto("/ai/evals");
+  const runs = page.getByRole("table").last();
+  const mixed = runs.locator("tbody tr").filter({ hasText: "mixed-fa" });
+  await expect(mixed).toHaveCount(2);
+  await expect(mixed.filter({ hasText: "نسخهٔ ۱" })).toContainText("فارسی: ۹۱٫۷٪");
+  await expect(mixed.filter({ hasText: "نسخهٔ ۱" })).toContainText("فینگلیش: ۷۵٪ (۸ نمونه)");
+  await expect(runs.locator("tbody tr").filter({ hasText: "fashion-fa" }).first()).toContainText("فینگلیش: — (۰ نمونه)");
+
+  await mixed.filter({ hasText: "نسخهٔ ۱" }).getByRole("link").click();
+  await expect(page.getByTestId("run-summary")).toContainText("فینگلیش: ۷۵٪ (۸ نمونه)");
+  const gate = page.getByRole("list", { name: "دروازهٔ ارزیابی" });
+  await expect(gate).toContainText("فاصله دقت فینگلیش با فارسی");
+  await expect(gate).toContainText("حداکثر ۵ امتیاز؛ این اجرا: ۱۶٫۷ امتیاز");
+  const rows = page.getByRole("table").locator("tbody tr");
+  await expect(rows.filter({ hasText: "salam gheymatesh chande?" })).toContainText("فینگلیش");
+  await expect(rows.filter({ hasText: "قیمت این مانتو چنده؟" }).first().getByText("فینگلیش", { exact: true })).toHaveCount(0);
+  await expectNoA11yViolations(page);
+
+  await page.goto("/ai/prompts");
+  await expect(page.getByRole("link", { name: "text.transliterate" })).toBeVisible();
+  await page.getByRole("link", { name: "knowledge.onboarding" }).click();
+  await expect(page.getByText("نسخهٔ فعال: ۱")).toBeVisible();
 });

@@ -347,6 +347,7 @@ export interface PromptKey {
   versionCount: number;
 }
 
+/** `finglish_gap` (BE-2.3) is present only when the set has both Finglish and Persian-script cases. */
 export interface EvalGateCheck {
   name: string;
   required: number;
@@ -372,6 +373,12 @@ export interface EvalRun {
   startedAt: string;
   finishedAt: string | null;
   gate: { passed: boolean; checks: EvalGateCheck[] };
+  /** Cases the backend read as Finglish (backend PR #44, BE-2.3); missing on older backends. */
+  finglishCaseCount?: number;
+  /** Intent accuracy over the Finglish cases; null when there were none. */
+  finglishIntentAccuracy?: number | null;
+  /** Intent accuracy over the Persian-script (non-Finglish) cases; null when there were none. */
+  scriptIntentAccuracy?: number | null;
 }
 
 export interface PromptVersion {
