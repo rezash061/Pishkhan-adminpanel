@@ -25,6 +25,8 @@ export const PERMISSIONS = [
   "ai.providers.manage",
   "content.read",
   "content.manage",
+  "templates.read",
+  "templates.manage",
   "files.quarantine",
   "export",
 ] as const;
@@ -43,12 +45,13 @@ const ROLE_PERMISSIONS: Record<StaffRole, readonly Permission[]> = {
     "leads.read",
     "plans.read",
     "content.read",
+    "templates.read",
     "files.quarantine",
   ],
   Finance: ["dashboard.read", "billing.read", "billing.refund", "plans.read", "plans.manage", "subscriptions.manage", "workspaces.read", "users.read", "export"],
   ContentEditor: ["dashboard.read", "content.read", "content.manage"],
-  AIOps: ["dashboard.read", "ai.read", "ai.manage", "platform.health.read"],
-  ReadOnly: ["dashboard.read", "platform.health.read", "workspaces.read", "users.read", "billing.read", "plans.read", "ai.read", "content.read"],
+  AIOps: ["dashboard.read", "ai.read", "ai.manage", "templates.read", "templates.manage", "platform.health.read"],
+  ReadOnly: ["dashboard.read", "platform.health.read", "workspaces.read", "users.read", "billing.read", "plans.read", "ai.read", "content.read", "templates.read"],
 };
 
 export function isStaffRole(value: string): value is StaffRole {
@@ -68,7 +71,7 @@ export function can(roles: readonly string[], permission: Permission): boolean {
   return permissionsFor(roles).has(permission);
 }
 
-export type NavIcon = "home" | "staff" | "audit" | "health" | "settings" | "leads" | "support" | "workspaces" | "users" | "plans" | "aiProviders" | "aiRoutes" | "aiPrompts" | "aiEvals" | "contentEntries" | "contentCategories" | "contentRedirects";
+export type NavIcon = "home" | "staff" | "audit" | "health" | "settings" | "leads" | "support" | "workspaces" | "users" | "plans" | "aiProviders" | "aiRoutes" | "aiPrompts" | "aiEvals" | "contentEntries" | "contentCategories" | "contentRedirects" | "industryTemplates";
 
 export interface NavItem {
   href: string;
@@ -76,10 +79,10 @@ export interface NavItem {
   labelKey: string;
   icon: NavIcon;
   permission: Permission | null;
-  section: "main" | "support" | "billing" | "ai" | "content" | "security" | "platform" | "account";
+  section: "main" | "support" | "billing" | "ai" | "templates" | "content" | "security" | "platform" | "account";
 }
 
-// Only pages that exist are listed. Billing, AI and content join as their AdminApi endpoints land (BE-1.12).
+// Only pages that exist are listed. Sections join as their AdminApi endpoints land.
 export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/", labelKey: "home", icon: "home", permission: "dashboard.read", section: "main" },
   { href: "/workspaces", labelKey: "workspaces", icon: "workspaces", permission: "workspaces.read", section: "main" },
@@ -91,6 +94,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/ai/routes", labelKey: "aiRoutes", icon: "aiRoutes", permission: "ai.read", section: "ai" },
   { href: "/ai/prompts", labelKey: "aiPrompts", icon: "aiPrompts", permission: "ai.read", section: "ai" },
   { href: "/ai/evals", labelKey: "aiEvals", icon: "aiEvals", permission: "ai.read", section: "ai" },
+  { href: "/templates/industry", labelKey: "industryTemplates", icon: "industryTemplates", permission: "templates.read", section: "templates" },
   { href: "/content/entries", labelKey: "contentEntries", icon: "contentEntries", permission: "content.read", section: "content" },
   { href: "/content/categories", labelKey: "contentCategories", icon: "contentCategories", permission: "content.read", section: "content" },
   { href: "/content/redirects", labelKey: "contentRedirects", icon: "contentRedirects", permission: "content.read", section: "content" },
