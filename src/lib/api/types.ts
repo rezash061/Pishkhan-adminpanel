@@ -481,3 +481,84 @@ export interface ContentRedirect {
   permanent: boolean;
   createdAt: string;
 }
+
+// ---- Industry templates (backend PR #40, /admin/v1/industry-templates) ----
+
+export const TEMPLATE_STATUSES = ["draft", "published", "archived"] as const;
+/** Workspace industries a template can be made for (Tenancy `Workspace.Industries`). */
+export const TEMPLATE_INDUSTRIES = WORKSPACE_INDUSTRIES;
+/** The AI agent's tones (Agent module). */
+export const AGENT_TONES = ["friendly", "formal", "playful"] as const;
+
+/** A fact every shop of the industry should give the AI (knowledge score). */
+export interface TemplateRequiredFact {
+  key: string;
+  label: string;
+  prompt: string;
+}
+
+/** Answers may hold blanks such as «[مبلغ] تومان» for the owner to fill in. */
+export interface TemplateFaq {
+  key: string;
+  question: string;
+  answer: string;
+}
+
+/** `graph` is in the flows API's shape (`start`, `nodes`, `edges`). */
+export interface TemplateFlow {
+  key: string;
+  name: string;
+  graph: unknown;
+}
+
+/** In the rules API's shape, except that `start_flow` names its flow with `flowKey`. */
+export interface TemplateRule {
+  key: string;
+  name: string;
+  triggerKind: string;
+  trigger: unknown;
+  actions: unknown;
+  priority: number;
+}
+
+export interface TemplateAgentProfile {
+  name: string;
+  /** friendly, formal or playful. */
+  tone: string;
+  brandVoice: string | null;
+  neverSay: string[];
+  handoffKeywords: string[];
+}
+
+export interface TemplateContent {
+  requiredFacts: TemplateRequiredFact[];
+  faqs: TemplateFaq[];
+  flows: TemplateFlow[];
+  rules: TemplateRule[];
+  agentProfile: TemplateAgentProfile | null;
+}
+
+/** `PUT /industry-templates/{id}` and `template` in `POST /industry-templates`. */
+export interface TemplateRequest {
+  name: string;
+  description: string | null;
+  content: TemplateContent;
+}
+
+/**
+ * One version of an industry template. `status`: draft, published, archived. `issues` are content problems such as
+ * `rules[size-keyword]: template.flow_key_unknown`; a draft with issues can be saved but not published.
+ */
+export interface IndustryTemplate {
+  id: string;
+  industry: string;
+  version: number;
+  status: string;
+  name: string;
+  description: string | null;
+  content: TemplateContent;
+  issues: string[];
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string | null;
+}
