@@ -5,6 +5,7 @@
 
 import { handleAi, seedAi, type AiMockState } from "./ai";
 import { handleContent, seedContent, type ContentMockState } from "./content";
+import { handleOutage, seedOutage, type OutageMockState } from "./outage";
 import { handleTemplates, seedTemplates, type TemplatesMockState } from "./templates";
 import { auditFixtures, leadFixtures, planFixtures, userFixtures, workspaceFixtures, workspaceOwnerPhones } from "./fixtures";
 
@@ -35,6 +36,7 @@ interface MockState {
   ai: AiMockState;
   content: ContentMockState;
   templates: TemplatesMockState;
+  outage: OutageMockState;
 }
 
 interface MockSubscription {
@@ -69,6 +71,7 @@ const seed = (): MockState => ({
   ai: seedAi(),
   content: seedContent(),
   templates: seedTemplates(),
+  outage: seedOutage(),
 });
 
 const DAY = 86_400_000;
@@ -569,6 +572,12 @@ export async function handleMockRequest(request: Request): Promise<Response> {
 
   if (url.pathname.startsWith("/admin/v1/content/")) {
     const handled = await handleContent(request, url, db.content, caller.user.roles, problem);
+    if (handled) return handled;
+  }
+
+  if (url.pathname === "/admin/v1/platform/outage") {
+    const fresh = !!caller.stepUpAt && Date.now() - caller.stepUpAt <= 300_000;
+    const handled = await handleOutage(request, url, db.outage, caller.user.roles, fresh, problem);
     if (handled) return handled;
   }
 

@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased — Instagram outage mode (BE-2.7 part 1)
+
+- New "قطعی اینستاگرام" page in the Platform section (`/platform/outage`), from `GET/PUT /admin/v1/platform/outage`
+  (backend PR #47). SuperAdmin, Support, ReadOnly, AIOps and Finance can read it; Support and SuperAdmin can change the
+  mode (`platform.outage.read`, `platform.outage.manage`).
+- The page shows:
+  - the status (up or down) on a green or red banner, with `since` in Jalali and as a relative time;
+  - the mode;
+  - the detector's `ok` and `failed` counts over `windowMinutes`, with the failure share («—» when nothing was called);
+  - the reason for the last mode change.
+  It refreshes every 30 seconds.
+- Changing the mode: three options with Persian explanations (auto «تشخیص خودکار», forced_down «اعلام قطعی دستی», forced_up
+  «لغو هشدار»), a required reason of 5 to 300 characters and step-up. A warning says that a status change notifies
+  every workspace with an Instagram account. Server field errors land on their fields.
+- Home dashboard: a red alert with a link to the page while Instagram is down, for staff who can read the outage
+  status.
+- `formatRelative` in `src/lib/format.ts` for Persian relative times.
+- Mock AdminApi: outage status (up, auto, with a few failures) with the backend's role, step-up and validation rules,
+  and the detector's down rule. Unit, component and Playwright tests.
+
 ## Unreleased — Finglish eval metrics (BE-2.3)
 
 - Eval runs from backend PR #44 (BE-2.3) carry `finglishCaseCount`, `finglishIntentAccuracy` and `scriptIntentAccuracy`.
