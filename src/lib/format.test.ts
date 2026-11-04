@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatJalaliDate, formatJalaliDateTime, formatToman, maskPhone, toLatinDigits, toPersianDigits } from "./format";
+import { formatJalaliDate, formatJalaliDateTime, formatRelative, formatToman, maskPhone, toLatinDigits, toPersianDigits } from "./format";
 
 describe("format", () => {
   it("converts digits both ways", () => {
@@ -16,6 +16,14 @@ describe("format", () => {
     expect(formatJalaliDateTime("2026-10-28T20:45:00Z")).toContain("۱۴۰۵/۰۸/۰۷");
     expect(formatJalaliDateTime("2026-10-28T20:45:00Z")).toContain("۰۰:۱۵");
     expect(formatJalaliDate("2026-03-20T21:00:00Z")).toBe("۱ فروردین ۱۴۰۵");
+  });
+
+  it("says how long ago, in Persian", () => {
+    const now = Date.parse("2026-11-04T10:00:00Z");
+    expect(formatRelative("2026-11-04T09:59:30Z", now)).toBe("همین دقیقه");
+    expect(formatRelative("2026-11-04T09:55:00Z", now)).toBe("۵ دقیقه پیش");
+    expect(formatRelative("2026-11-04T07:30:00Z", now)).toBe("۲ ساعت پیش");
+    expect(formatRelative("2026-11-01T10:00:00Z", now)).toBe("۳ روز پیش");
   });
 
   it("masks phone numbers", () => {

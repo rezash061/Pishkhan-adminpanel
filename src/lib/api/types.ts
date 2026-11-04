@@ -569,3 +569,26 @@ export interface IndustryTemplate {
   updatedAt: string;
   publishedAt: string | null;
 }
+
+// ---- Instagram outage mode (backend PR #47, BE-2.7 part 1, /admin/v1/platform/outage) ----
+
+/** auto: the detector decides; forced_down: staff declared Instagram down; forced_up: staff cancelled the alarm. */
+export const OUTAGE_MODES = ["auto", "forced_down", "forced_up"] as const;
+
+/** `GET /admin/v1/platform/outage`. `status`: up or down. `ok` and `failed` are Graph API calls over the last `windowMinutes`. */
+export interface AdminOutage {
+  kind: string;
+  status: string;
+  mode: string;
+  since: string;
+  modeReason: string | null;
+  ok: number;
+  failed: number;
+  windowMinutes: number;
+}
+
+/** `PUT /admin/v1/platform/outage` (Support or SuperAdmin, step-up). `reason`: 5 to 300 characters. */
+export interface OutageModeRequest {
+  mode: string;
+  reason: string;
+}

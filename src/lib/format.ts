@@ -52,3 +52,14 @@ export function maskPhone(phone: string): string {
   const latin = toLatinDigits(phone);
   return latin.length < 8 ? "***" : `${latin.slice(0, 4)}***${latin.slice(-4)}`;
 }
+
+const relative = new Intl.RelativeTimeFormat("fa-IR", { numeric: "auto" });
+
+/** How long ago (or from now), in Persian: «۵ دقیقه پیش», «۲ ساعت پیش». */
+export function formatRelative(iso: string | Date, now: number = Date.now()): string {
+  const seconds = Math.round(((typeof iso === "string" ? Date.parse(iso) : iso.getTime()) - now) / 1000);
+  const abs = Math.abs(seconds);
+  if (abs < 3600) return relative.format(Math.trunc(seconds / 60), "minute");
+  if (abs < 86_400) return relative.format(Math.trunc(seconds / 3600), "hour");
+  return relative.format(Math.trunc(seconds / 86_400), "day");
+}

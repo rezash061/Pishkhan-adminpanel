@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { staffWith } from "@/lib/auth/guard";
 import { can, navFor } from "@/lib/permissions";
+import { OutageHomeAlert } from "./platform/outage/outage-panel";
 import { HealthSummary } from "./platform/health/health-panel";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -24,6 +25,7 @@ export default async function HomePage() {
   return (
     <>
       <PageHeader title={t("home.welcome", { username: staff.username })} />
+      {can(staff.roles, "platform.outage.read") ? <OutageHomeAlert /> : null}
       <div className="mb-6 flex flex-wrap items-center gap-2 text-sm">
         <span className="text-muted-foreground">{t("home.rolesLabel")}:</span>
         {staff.roles.map((r) => (
