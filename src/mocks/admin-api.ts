@@ -6,6 +6,7 @@
 import { handleAi, seedAi, type AiMockState } from "./ai";
 import { handleContent, seedContent, type ContentMockState } from "./content";
 import { handleOutage, seedOutage, type OutageMockState } from "./outage";
+import { handlePlatform, seedPlatform, type PlatformMockState } from "./platform";
 import { handleTemplates, seedTemplates, type TemplatesMockState } from "./templates";
 import { auditFixtures, leadFixtures, planFixtures, userFixtures, workspaceFixtures, workspaceOwnerPhones } from "./fixtures";
 
@@ -37,6 +38,7 @@ interface MockState {
   content: ContentMockState;
   templates: TemplatesMockState;
   outage: OutageMockState;
+  platform: PlatformMockState;
 }
 
 interface MockSubscription {
@@ -72,6 +74,7 @@ const seed = (): MockState => ({
   content: seedContent(),
   templates: seedTemplates(),
   outage: seedOutage(),
+  platform: seedPlatform(),
 });
 
 const DAY = 86_400_000;
@@ -321,6 +324,12 @@ export async function handleMockRequest(request: Request): Promise<Response> {
       );
       return json({ items: filtered.slice((page - 1) * pageSize, page * pageSize), totalCount: filtered.length, page, pageSize });
     }
+  }
+
+  if (url.pathname.startsWith("/admin/v1/files/") || url.pathname.startsWith("/admin/v1/platform/") || url.pathname.startsWith("/admin/v1/feature-flags") || /\/feature-flags(\/|$)/.test(url.pathname)) {
+    const fresh = !!caller.stepUpAt && Date.now() - caller.stepUpAt <= 300_000;
+    const handled = await handlePlatform(request, url, db.platform, caller.user, fresh, problem);
+    if (handled) return handled;
   }
 
   if (route === "GET /admin/v1/leads") {

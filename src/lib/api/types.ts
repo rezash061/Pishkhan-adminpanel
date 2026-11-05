@@ -592,3 +592,173 @@ export interface OutageModeRequest {
   mode: string;
   reason: string;
 }
+
+// ---- File quarantine (AD-1.6, /admin/v1/files) ----
+
+/** Filters of `GET /admin/v1/files/quarantine`; "" is the default view (infected, scan_failed and stuck pending files). */
+export const QUARANTINE_FILTERS = ["infected", "scan_failed", "pending", "rejected"] as const;
+
+/** A file that is not usable. There is never a download link. `stuck`: pending for more than 10 minutes. */
+export interface QuarantineFile {
+  id: string;
+  workspaceId: string;
+  workspaceName: string | null;
+  purpose: string;
+  status: string;
+  contentType: string;
+  size: number;
+  originalName: string | null;
+  signature: string | null;
+  scanEngineVersion: string | null;
+  rejectReason: string | null;
+  scanAttempts: number;
+  createdAt: string;
+  scannedAt: string | null;
+  falsePositiveAt: string | null;
+  stuck: boolean;
+}
+
+/** `GET /admin/v1/files/quarantine/summary`; `pending` counts stuck files only. */
+export interface QuarantineSummary {
+  infected: number;
+  scanFailed: number;
+  pending: number;
+  rejected: number;
+}
+
+// ---- Kafka, dead letters, workers (AD-1.7, /admin/v1/platform) ----
+
+export interface KafkaTopic {
+  name: string;
+  exists: boolean;
+  partitions: number;
+  messages: number;
+  retentionDays: number;
+  keyDescription: string;
+  isDlq: boolean;
+}
+
+export interface KafkaPartitionLag {
+  partition: number;
+  committed: number | null;
+  end: number;
+  lag: number;
+}
+
+export interface KafkaGroupTopicLag {
+  topic: string;
+  lag: number;
+  partitions: KafkaPartitionLag[];
+}
+
+/** A worker group (Kafka consumer group). `state` as Kafka reports it: Stable, Empty, Dead, PreparingRebalance... */
+export interface KafkaGroup {
+  group: string;
+  state: string;
+  members: number;
+  lag: number;
+  topics: KafkaGroupTopicLag[];
+}
+
+/** `GET /admin/v1/platform/kafka` (cached 15 s by the backend; 503 `platform.kafka_unavailable`). */
+export interface KafkaOverview {
+  at: string;
+  topics: KafkaTopic[];
+  groups: KafkaGroup[];
+}
+
+export const DEAD_LETTER_STATUSES = ["open", "replayed", "discarded", "all"] as const;
+
+export interface DeadLetter {
+  id: string;
+  messageId: string;
+  topic: string;
+  group: string;
+  consumer: string;
+  key: string;
+  type: string;
+  workspaceId: string | null;
+  exceptionType: string;
+  exceptionMessage: string;
+  attempts: number;
+  failedAt: string;
+  status: string;
+  resolvedAt: string | null;
+  resolvedBy: string | null;
+  resolutionReason: string | null;
+  replayMessageId: string | null;
+}
+
+export interface DeadLetterDetail {
+  deadLetter: DeadLetter;
+  envelope: unknown;
+}
+
+export interface DeadLetterGroupCount {
+  group: string;
+  open: number;
+  oldestOpenAt: string | null;
+}
+
+/** `POST /admin/v1/platform/dead-letters/{replay|discard}`: `skipped` holds ids that were unknown or no longer open. */
+export interface DeadLetterActionResponse {
+  done: number;
+  skipped: string[];
+}
+
+export interface WorkerInstance {
+  instanceId: string;
+  lastCheckinAt: string;
+  checkinIntervalSeconds: number;
+  alive: boolean;
+}
+
+/** `state` as Quartz keeps it: WAITING, ACQUIRED, EXECUTING, BLOCKED, PAUSED, ERROR. */
+export interface RecurringJob {
+  name: string;
+  cron: string | null;
+  state: string;
+  nextFireAt: string | null;
+  previousFireAt: string | null;
+}
+
+export interface WorkersOverview {
+  instances: WorkerInstance[];
+  jobs: RecurringJob[];
+  groups: { group: string; state: string; members: number; lag: number }[];
+}
+
+// ---- Feature flags (AD-1.8, /admin/v1/feature-flags) ----
+
+export interface FeatureFlag {
+  key: string;
+  description: string | null;
+  enabled: boolean;
+  rolloutPercent: number;
+  plans: string[];
+  overrides: number;
+  createdAt: string;
+  updatedAt: string;
+  updatedBy: string | null;
+}
+
+export interface FeatureFlagRequest {
+  key?: string;
+  description: string | null;
+  enabled: boolean;
+  rolloutPercent: number;
+  plans: string[];
+  reason: string;
+}
+
+/** `source`: override, rollout, plan (not on the workspace's plan), off (flag disabled) or rollout_excluded. */
+export interface WorkspaceFeatureFlag {
+  key: string;
+  description: string | null;
+  effective: boolean;
+  source: string;
+  override: boolean | null;
+  overrideReason: string | null;
+  overriddenAt: string | null;
+  overriddenBy: string | null;
+}

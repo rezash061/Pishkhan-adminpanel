@@ -5,18 +5,18 @@ const hrefs = (roles: string[]) => navFor(roles).map((i) => i.href);
 
 describe("navigation per role", () => {
   it.each([
-    ["SuperAdmin", ["/", "/workspaces", "/users", "/leads", "/support/sessions", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/templates/industry", "/content/entries", "/content/categories", "/content/redirects", "/security/audit-log", "/security/staff", "/platform/health", "/platform/outage", "/settings"]],
-    ["Support", ["/", "/workspaces", "/users", "/leads", "/support/sessions", "/billing/plans", "/templates/industry", "/content/entries", "/content/categories", "/content/redirects", "/security/audit-log", "/platform/health", "/platform/outage", "/settings"]],
-    ["Finance", ["/", "/workspaces", "/users", "/billing/plans", "/platform/outage", "/settings"]],
+    ["SuperAdmin", ["/", "/workspaces", "/users", "/leads", "/support/sessions", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/templates/industry", "/content/entries", "/content/categories", "/content/redirects", "/security/audit-log", "/security/staff", "/security/quarantine", "/platform/health", "/platform/outage", "/platform/kafka", "/platform/dead-letters", "/platform/workers", "/platform/feature-flags", "/settings"]],
+    ["Support", ["/", "/workspaces", "/users", "/leads", "/support/sessions", "/billing/plans", "/templates/industry", "/content/entries", "/content/categories", "/content/redirects", "/security/audit-log", "/security/quarantine", "/platform/health", "/platform/outage", "/platform/kafka", "/platform/dead-letters", "/platform/workers", "/platform/feature-flags", "/settings"]],
+    ["Finance", ["/", "/workspaces", "/users", "/billing/plans", "/platform/outage", "/platform/feature-flags", "/settings"]],
     ["ContentEditor", ["/", "/content/entries", "/content/categories", "/content/redirects", "/settings"]],
-    ["AIOps", ["/", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/templates/industry", "/platform/health", "/platform/outage", "/settings"]],
-    ["ReadOnly", ["/", "/workspaces", "/users", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/templates/industry", "/content/entries", "/content/categories", "/content/redirects", "/platform/health", "/platform/outage", "/settings"]],
+    ["AIOps", ["/", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/templates/industry", "/platform/health", "/platform/outage", "/platform/kafka", "/platform/dead-letters", "/platform/workers", "/platform/feature-flags", "/settings"]],
+    ["ReadOnly", ["/", "/workspaces", "/users", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/templates/industry", "/content/entries", "/content/categories", "/content/redirects", "/platform/health", "/platform/outage", "/platform/kafka", "/platform/dead-letters", "/platform/workers", "/platform/feature-flags", "/settings"]],
   ])("%s sees %j", (role, expected) => {
     expect(hrefs([role])).toEqual(expected);
   });
 
   it("combines roles", () => {
-    expect(hrefs(["Finance", "AIOps"])).toEqual(["/", "/workspaces", "/users", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/templates/industry", "/platform/health", "/platform/outage", "/settings"]);
+    expect(hrefs(["Finance", "AIOps"])).toEqual(["/", "/workspaces", "/users", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/templates/industry", "/platform/health", "/platform/outage", "/platform/kafka", "/platform/dead-letters", "/platform/workers", "/platform/feature-flags", "/settings"]);
   });
 
   it("grants nothing for unknown roles", () => {
@@ -46,5 +46,14 @@ describe("navigation per role", () => {
 
   it("reserves staff management for SuperAdmin", () => {
     for (const role of STAFF_ROLES) expect(can([role], "staff.manage")).toBe(role === "SuperAdmin");
+  });
+
+  it("keeps quarantine with Support and SuperAdmin, and false positives, DLQ actions, jobs and flag edits with SuperAdmin", () => {
+    for (const role of STAFF_ROLES) {
+      expect(can([role], "files.quarantine")).toBe(role === "SuperAdmin" || role === "Support");
+      for (const p of ["files.false_positive", "platform.dlq.manage", "platform.jobs.manage", "flags.manage"] as const) expect(can([role], p)).toBe(role === "SuperAdmin");
+      expect(can([role], "platform.dlq.payload")).toBe(role === "SuperAdmin" || role === "Support");
+      expect(can([role], "flags.override")).toBe(role === "SuperAdmin" || role === "Support");
+    }
   });
 });

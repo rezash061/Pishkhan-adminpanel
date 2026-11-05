@@ -134,6 +134,20 @@ generated client or copy of `admin.v1.json` in this repo); they match the PR's `
   from `[AsParameters]`); binding is case-insensitive so the panel sends lower case, but generated clients would not.
 - **Storefront examples** (admin plan 4.6) are not part of `TemplateContent` yet.
 
+## 1k. Platform operations — backend branch `claude/project-thread-bkd8n1` (BE-1.12 platform ops)
+
+- File quarantine: `GET /admin/v1/files/quarantine` (+ `/summary`), `POST /files/{id}/rescan`, `/delete` (step-up),
+  `/false-positive` (SuperAdmin, step-up). A false positive re-scans the file without reusing earlier verdicts.
+- Kafka: `GET /admin/v1/platform/kafka` (15 s cache, `503 platform.kafka_unavailable` when the broker is down).
+- Dead letters: `GET /admin/v1/platform/dead-letters` (+ `/summary`, `/{id}` with payload for SuperAdmin and Support),
+  `POST /dead-letters/replay` and `/discard` (SuperAdmin, step-up, 1 to 100 ids, reason). Replay reaches only the
+  failed handler.
+- Workers: `GET /admin/v1/platform/workers` (Quartz instances and triggers, worker groups) and
+  `POST /platform/jobs/{name}/trigger` (SuperAdmin, step-up, `409 platform.job_busy` unless `WAITING`).
+- Feature flags: `GET/POST /admin/v1/feature-flags`, `PUT /feature-flags/{key}`, `POST /feature-flags/{key}/delete`
+  (SuperAdmin; delete needs step-up), workspace overrides `GET /workspaces/{id}/feature-flags` and
+  `PUT /workspaces/{id}/feature-flags/{key}` (Support, `{enabled: bool|null, reason}`).
+
 ## 2. Platform health
 
 The health page reads the AdminApi's own `/health/ready`, which today reports PostgreSQL and the two Redis
@@ -154,7 +168,7 @@ with one entry per dependency. The panel already renders any check names it rece
 ## 4. Phase 1 pages (BE-1.12)
 
 Workspace detail tabs beyond the overview, AI providers / routes / prompts / evals /
-traces, file quarantine, Kafka / DLQ / workers / Meta app, feature flags, CMS and the home dashboard KPIs and
+traces, Meta app, CMS (quarantine, Kafka, DLQ, workers and feature flags are done, see 1k) and the home dashboard KPIs and
 alerts, as listed in `02-admin-panel.md` section 4. List endpoints should use `page`, `pageSize`,
 `totalCount` (overview section 6) so the panel's tables can share one pagination component.
 

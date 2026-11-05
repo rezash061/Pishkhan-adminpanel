@@ -63,3 +63,17 @@ export function formatRelative(iso: string | Date, now: number = Date.now()): st
   if (abs < 86_400) return relative.format(Math.trunc(seconds / 3600), "hour");
   return relative.format(Math.trunc(seconds / 86_400), "day");
 }
+
+/** File sizes in Persian digits: «۱۲ کیلوبایت», «۳٫۴ مگابایت». */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${toPersianDigits(bytes)} بایت`;
+  const units = ["کیلوبایت", "مگابایت", "گیگابایت"];
+  let value = bytes / 1024;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit++;
+  }
+  const text = value >= 10 ? Math.round(value).toString() : (Math.round(value * 10) / 10).toString();
+  return `${toPersianDigits(text).replace(".", "٫")} ${units[unit]}`;
+}
