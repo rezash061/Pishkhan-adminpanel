@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased — Staff management, AI traces, home dashboard and full health page (AD-0.2, AD-0.4, AD-1.10)
+
+- Against backend PR #52 (see `docs/backend-requests.md` 1l):
+  - **Home dashboard**: KPI tiles (active workspaces, sign-ups today / 7 days, paying workspaces, MRR in Toman, AI replies and
+    handoff rate today, quarantined files, open dead letters, Kafka lag, channels needing re-auth, Instagram) and the backend's
+    alerts. Tiles and alerts link to the filtered page when the staff member can open it. Refreshes every minute.
+  - **Staff**: last activity and lockout columns; SuperAdmin can deactivate or reactivate an account, reset its TOTP and change
+    its roles (step-up and reason). Your own account cannot be deactivated or reset.
+  - **Settings**: "active sessions" with device, IP and last activity; end any session other than the current one.
+  - **AI traces** (`/ai/traces`, SuperAdmin, AIOps, Support, ReadOnly): stats for 24 hours, filters (outcome, workspace, low
+    confidence, guard issues) in the URL, and a detail page. Customer content stays hidden until SuperAdmin, AIOps or Support
+    gives a reason; the reveal is written to the workspace's audit log.
+  - **Health**: reads `/admin/v1/platform/health` (Kafka, ClamAV, storage, workers, Instagram, AI) with a detail column, and falls
+    back to `/health/ready` on an older backend.
+- Fix: a request still in flight during sign-out (idle or explicit) no longer redirects to "session expired" over the sign-out page.
+- New permissions `ai.traces.read` and `ai.traces.reveal`; mock handlers with the backend's rules; unit and Playwright tests.
+
 ## Unreleased — Platform operations: quarantine, Kafka, dead letters, workers, feature flags (AD-1.6 to AD-1.8)
 
 - New pages, against the backend's platform operations endpoints (see `docs/backend-requests.md` 1k):

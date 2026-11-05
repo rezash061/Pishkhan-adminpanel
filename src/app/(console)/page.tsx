@@ -3,13 +3,13 @@ import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { NavIcon } from "@/components/console/nav-icon";
 import { Forbidden } from "@/components/console/forbidden";
-import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { staffWith } from "@/lib/auth/guard";
 import { can, navFor } from "@/lib/permissions";
 import { OutageHomeAlert } from "./platform/outage/outage-panel";
+import { DashboardPanel } from "./dashboard-panel";
 import { HealthSummary } from "./platform/health/health-panel";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -33,6 +33,9 @@ export default async function HomePage() {
             {t.has(`roles.${r}`) ? t(`roles.${r}`) : r}
           </Badge>
         ))}
+      </div>
+      <div className="mb-6">
+        <DashboardPanel />
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         {can(staff.roles, "platform.health.read") ? (
@@ -66,9 +69,6 @@ export default async function HomePage() {
           </CardContent>
         </Card>
       </div>
-      <Alert tone="info" className="mt-6">
-        {t("home.kpiPending")}
-      </Alert>
     </>
   );
 }

@@ -5,18 +5,18 @@ const hrefs = (roles: string[]) => navFor(roles).map((i) => i.href);
 
 describe("navigation per role", () => {
   it.each([
-    ["SuperAdmin", ["/", "/workspaces", "/users", "/leads", "/support/sessions", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/templates/industry", "/content/entries", "/content/categories", "/content/redirects", "/security/audit-log", "/security/staff", "/security/quarantine", "/platform/health", "/platform/outage", "/platform/kafka", "/platform/dead-letters", "/platform/workers", "/platform/feature-flags", "/settings"]],
-    ["Support", ["/", "/workspaces", "/users", "/leads", "/support/sessions", "/billing/plans", "/templates/industry", "/content/entries", "/content/categories", "/content/redirects", "/security/audit-log", "/security/quarantine", "/platform/health", "/platform/outage", "/platform/kafka", "/platform/dead-letters", "/platform/workers", "/platform/feature-flags", "/settings"]],
+    ["SuperAdmin", ["/", "/workspaces", "/users", "/leads", "/support/sessions", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/ai/traces", "/templates/industry", "/content/entries", "/content/categories", "/content/redirects", "/security/audit-log", "/security/staff", "/security/quarantine", "/platform/health", "/platform/outage", "/platform/kafka", "/platform/dead-letters", "/platform/workers", "/platform/feature-flags", "/settings"]],
+    ["Support", ["/", "/workspaces", "/users", "/leads", "/support/sessions", "/billing/plans", "/ai/traces", "/templates/industry", "/content/entries", "/content/categories", "/content/redirects", "/security/audit-log", "/security/quarantine", "/platform/health", "/platform/outage", "/platform/kafka", "/platform/dead-letters", "/platform/workers", "/platform/feature-flags", "/settings"]],
     ["Finance", ["/", "/workspaces", "/users", "/billing/plans", "/platform/outage", "/platform/feature-flags", "/settings"]],
     ["ContentEditor", ["/", "/content/entries", "/content/categories", "/content/redirects", "/settings"]],
-    ["AIOps", ["/", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/templates/industry", "/platform/health", "/platform/outage", "/platform/kafka", "/platform/dead-letters", "/platform/workers", "/platform/feature-flags", "/settings"]],
-    ["ReadOnly", ["/", "/workspaces", "/users", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/templates/industry", "/content/entries", "/content/categories", "/content/redirects", "/platform/health", "/platform/outage", "/platform/kafka", "/platform/dead-letters", "/platform/workers", "/platform/feature-flags", "/settings"]],
+    ["AIOps", ["/", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/ai/traces", "/templates/industry", "/platform/health", "/platform/outage", "/platform/kafka", "/platform/dead-letters", "/platform/workers", "/platform/feature-flags", "/settings"]],
+    ["ReadOnly", ["/", "/workspaces", "/users", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/ai/traces", "/templates/industry", "/content/entries", "/content/categories", "/content/redirects", "/platform/health", "/platform/outage", "/platform/kafka", "/platform/dead-letters", "/platform/workers", "/platform/feature-flags", "/settings"]],
   ])("%s sees %j", (role, expected) => {
     expect(hrefs([role])).toEqual(expected);
   });
 
   it("combines roles", () => {
-    expect(hrefs(["Finance", "AIOps"])).toEqual(["/", "/workspaces", "/users", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/templates/industry", "/platform/health", "/platform/outage", "/platform/kafka", "/platform/dead-letters", "/platform/workers", "/platform/feature-flags", "/settings"]);
+    expect(hrefs(["Finance", "AIOps"])).toEqual(["/", "/workspaces", "/users", "/billing/plans", "/ai/providers", "/ai/routes", "/ai/prompts", "/ai/evals", "/ai/traces", "/templates/industry", "/platform/health", "/platform/outage", "/platform/kafka", "/platform/dead-letters", "/platform/workers", "/platform/feature-flags", "/settings"]);
   });
 
   it("grants nothing for unknown roles", () => {
@@ -28,6 +28,9 @@ describe("navigation per role", () => {
     for (const role of STAFF_ROLES) expect(can([role], "ai.providers.manage")).toBe(role === "SuperAdmin");
     expect(can(["AIOps"], "ai.manage")).toBe(true);
     expect(can(["ReadOnly"], "ai.manage")).toBe(false);
+    // Traces: readers match the backend (SuperAdmin, AIOps, Support, ReadOnly); revealing content needs more than ReadOnly.
+    expect(STAFF_ROLES.filter((r) => can([r], "ai.traces.read"))).toEqual(["SuperAdmin", "Support", "AIOps", "ReadOnly"]);
+    expect(STAFF_ROLES.filter((r) => can([r], "ai.traces.reveal"))).toEqual(["SuperAdmin", "Support", "AIOps"]);
   });
 
   it("lets AIOps and SuperAdmin edit industry templates; Support and ReadOnly only read them", () => {

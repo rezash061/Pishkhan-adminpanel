@@ -7,6 +7,21 @@ export interface StaffSummary {
   status: string;
   totpEnabled: boolean;
   createdAt: string;
+  /** Last sign-in or token refresh; null if never signed in (backend PR #52). */
+  lastActiveAt?: string | null;
+  /** Set while locked after 5 failed sign-ins. */
+  lockedUntil?: string | null;
+}
+
+/** `GET /admin/v1/me/sessions`: one per sign-in. `current` is the session making the request. */
+export interface StaffSession {
+  id: string;
+  startedAt: string;
+  lastActiveAt: string;
+  expiresAt: string;
+  ip: string | null;
+  userAgent: string | null;
+  current: boolean;
 }
 
 export interface CreateStaffRequest {
@@ -17,8 +32,12 @@ export interface CreateStaffRequest {
 
 export interface HealthReport {
   status: string;
-  checks: Record<string, { status: string; ms: number }>;
+  /** `detail` comes from `/admin/v1/platform/health` (broker count, signature age, lag); `/health/ready` has none. */
+  checks: Record<string, { status: string; ms: number; detail?: string | null }>;
 }
+
+/** `GET /admin/v1/platform/health`: every dependency of the platform, worst status first in `status`. */
+export type PlatformHealthReport = HealthReport;
 
 /** `GET /admin/v1/audit`. Support staff only receive workspace-scoped entries. */
 export interface AuditEntry {
@@ -761,4 +780,92 @@ export interface WorkspaceFeatureFlag {
   overrideReason: string | null;
   overriddenAt: string | null;
   overriddenBy: string | null;
+}
+
+/** `GET /admin/v1/ai/traces`: a trace without customer content. */
+export interface AdminTraceSummary {
+  id: string;
+  workspaceId: string;
+  conversationId: string;
+  intent: string | null;
+  language: string | null;
+  outcome: string;
+  handoffReason: string | null;
+  confidence: number | null;
+  threshold: number;
+  prompts: string | null;
+  models: string | null;
+  inputTokens: number;
+  outputTokens: number;
+  costIrr: number;
+  latencyMs: number;
+  toolCallCount: number;
+  guardIssueCount: number;
+  createdAt: string;
+}
+
+export interface TraceFact {
+  chunkId: string;
+  sourceId: string;
+  sourceKind: string;
+  title: string;
+  score: number;
+  similarity: number | null;
+}
+
+/** Content fields are null while `redacted`; `POST .../reveal` with a reason fills them and is audited. */
+export interface AdminTraceDetail {
+  trace: AdminTraceSummary;
+  redacted: boolean;
+  messageId: string;
+  flowRunId: string | null;
+  goal: string | null;
+  input: string | null;
+  reply: string | null;
+  sentiment: string | null;
+  classifierConfidence: number | null;
+  selfConfidence: number | null;
+  facts: TraceFact[];
+  toolCalls: { name: string; arguments: string | null; result: string | null; error: string | null }[];
+  guardIssues: { attempt: number; kind: string; detail: string }[];
+}
+
+export interface AdminTraceStats {
+  from: string;
+  total: number;
+  outcomes: Record<string, number>;
+  lowConfidence: number;
+  withGuardIssues: number;
+  costIrr: number;
+}
+
+export const TRACE_OUTCOMES = ["sent", "handed_off", "failed"] as const;
+
+/** `GET /admin/v1/dashboard`. A null number means its source could not be read. Money in Rial. */
+export interface DashboardKpis {
+  activeWorkspaces: number | null;
+  signupsToday: number | null;
+  signups7d: number | null;
+  payingWorkspaces: number | null;
+  mrrRial: number | null;
+  aiRepliesToday: number | null;
+  handoffRateToday: number | null;
+  quarantinedFiles: number | null;
+  openDeadLetters: number | null;
+  maxConsumerLag: number | null;
+  channelsNeedingReauth: number | null;
+  instagramStatus: string | null;
+}
+
+export interface DashboardAlert {
+  code: "instagram_down" | "kafka_unavailable" | "consumer_lag" | "dead_letters" | "workers_down" | "quarantine" | "channels_reauth" | "ai_failures" | (string & {});
+  severity: "warning" | "danger";
+  count: number | null;
+  subject: string | null;
+}
+
+export interface DashboardResponse {
+  at: string;
+  kpis: DashboardKpis;
+  alerts: DashboardAlert[];
 }

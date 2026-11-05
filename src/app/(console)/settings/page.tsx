@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { requireStaff } from "@/lib/auth/session";
 import { LogoutButton } from "./logout-button";
+import { SessionsCard } from "./sessions-card";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getTranslations("settings"))("title") };
@@ -38,6 +39,7 @@ export default async function SettingsPage() {
             <LogoutButton label={t("settings.logoutEverywhere")} />
           </CardContent>
         </Card>
+        <SessionsCard />
       </div>
     </>
   );
