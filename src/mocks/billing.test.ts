@@ -64,3 +64,40 @@ describe("mock billing admin", () => {
     expect(summary.refundCount).toBe(3);
   });
 });
+
+describe("mock coupons and wallets", () => {
+  beforeEach(() => resetMockState());
+
+  it("lets Finance create coupons with unique codes and lists them by state", async () => {
+    const finance = await login("finance");
+    const created = await call("POST", "/admin/v1/billing/coupons", { code: "yalda-1405", kind: "percent", value: 30, maxPerWorkspace: 1, planCodes: [], firstPurchaseOnly: false, active: true }, finance);
+    expect(created.status).toBe(201);
+    expect(((await created.json()) as { code: string }).code).toBe("YALDA-1405");
+    expect((await call("POST", "/admin/v1/billing/coupons", { code: "YALDA-1405", kind: "percent", value: 30 }, finance)).status).toBe(409);
+    expect((await call("POST", "/admin/v1/billing/coupons", { code: "x", kind: "percent", value: 0 }, finance)).status).toBe(400);
+    expect((await call("POST", "/admin/v1/billing/coupons", { code: "SUPPORT", kind: "percent", value: 5 }, await login("support"))).status).toBe(403);
+    const disabled = (await (await call("GET", "/admin/v1/billing/coupons?state=disabled", undefined, finance)).json()) as { items: { code: string }[] };
+    expect(disabled.items.map((c) => c.code)).toEqual(["OLD-100K"]);
+  });
+
+  it("adjusts a wallet with step-up and never below zero", async () => {
+    const ws = "01938f61-0000-7000-8000-00000000b004";
+    const finance = await login("finance");
+    expect((await call("POST", `/admin/v1/workspaces/${ws}/wallet/adjustments`, { amount: 10, reason: "compensation" }, finance)).status).toBe(403);
+    const fresh = await stepUp(finance);
+    expect(((await (await call("POST", `/admin/v1/workspaces/${ws}/wallet/adjustments`, { amount: -2_000_000, reason: "too much off" }, fresh)).json()) as { code: string }).code).toBe("billing.wallet.insufficient");
+    const after = (await (await call("POST", `/admin/v1/workspaces/${ws}/wallet/adjustments`, { amount: 500_000, reason: "compensation" }, fresh)).json()) as { balance: { amount: number } };
+    expect(after.balance.amount).toBe(1_500_000);
+  });
+
+  it("refunds into the wallet and gives back the wallet part", async () => {
+    const fresh = await stepUp(await login("finance"));
+    const upgrade = "01938fb0-0000-7000-8000-000000000003";
+    const detail = (await (await call("POST", `/admin/v1/billing/payments/${upgrade}/refunds`, { amount: 0, reason: "ended by staff", endSubscription: true }, fresh)).json()) as AdminPaymentDetail;
+    expect(detail.payment.walletReleased).toBe(true);
+    expect(detail.refunds.at(-1)?.walletReturned).toBe(2_000_000);
+    await call("POST", `/admin/v1/billing/payments/${upgrade}/refunds`, { amount: 100_000, reason: "to the wallet", toWallet: true }, fresh);
+    const wallet = (await (await call("GET", "/admin/v1/workspaces/01938f61-0000-7000-8000-00000000b004/wallet", undefined, fresh)).json()) as { balance: { amount: number } };
+    expect(wallet.balance.amount).toBe(3_100_000);
+  });
+});

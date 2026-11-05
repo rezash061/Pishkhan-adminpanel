@@ -436,7 +436,7 @@ export async function handleMockRequest(request: Request): Promise<Response> {
     if (handled) return handled;
   }
 
-  if (url.pathname.startsWith("/admin/v1/billing/")) {
+  if (url.pathname.startsWith("/admin/v1/billing/") || /^\/admin\/v1\/workspaces\/[^/]+\/wallet(\/|$)/.test(url.pathname)) {
     const fresh = !!caller.stepUpAt && Date.now() - caller.stepUpAt <= 300_000;
     const handled = await handleBilling(request, url, db.billing, db.subscriptions, caller.user, fresh, problem);
     if (handled) return handled;

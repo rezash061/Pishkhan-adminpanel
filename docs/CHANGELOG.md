@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — Coupons and wallets (AD-1.4)
+
+- Against backend PR #55 (see `docs/backend-requests.md` 1m):
+  - **Coupons** (`/billing/coupons`): list with search and state, a page for each coupon with its redemptions, and (Finance) create and
+    edit: percent or Toman off, plan codes, first purchase only, total and per-shop limits, dates, on/off. Code, kind and value are fixed
+    after creation.
+  - **Workspace wallet** on the workspace page: balance and latest changes, and (Finance, step-up, reason) credit added or taken off.
+  - **Payments**: discount, coupon code and wallet part on the payment page. A refund can be paid into the wallet, and ending the
+    subscription also gives back the wallet part (amount 0 allowed for that).
+  - New permissions `coupons.manage` and `wallet.adjust` (Finance and SuperAdmin).
+
 ## Unreleased — Billing: subscriptions, payments and invoices, refunds (AD-1.4)
 
 - Against backend PR #54 (see `docs/backend-requests.md` 1m):

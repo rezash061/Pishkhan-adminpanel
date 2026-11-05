@@ -910,6 +910,13 @@ export interface AdminPayment {
   subscriptionId: string | null;
   createdAt: string;
   paidAt: string | null;
+  /** Coupon discount, Rial. */
+  discount: number;
+  couponCode: string | null;
+  /** Paid from the workspace's wallet, Rial. */
+  walletUsed: number;
+  /** The wallet part was given back (failed, expired or refunded). */
+  walletReleased: boolean;
 }
 
 export interface AdminRefund {
@@ -922,6 +929,10 @@ export interface AdminRefund {
   /** Staff username. */
   createdBy: string | null;
   createdAt: string;
+  /** Paid into the workspace's wallet instead of through Zarinpal. */
+  toWallet: boolean;
+  /** The checkout's wallet part given back with it, Rial. */
+  walletReturned: number;
 }
 
 export interface AdminPaymentDetail {
@@ -936,6 +947,7 @@ export interface RefundRequest {
   reason: string;
   referenceId?: string | null;
   endSubscription: boolean;
+  toWallet?: boolean;
 }
 
 export interface BillingSummary {
@@ -947,4 +959,77 @@ export interface BillingSummary {
   netAmount: number;
   failedCount: number;
   pendingCount: number;
+}
+
+// Coupons and wallets (backend PR #55).
+
+export const COUPON_KINDS = ["percent", "fixed"] as const;
+export const COUPON_STATES = ["active", "scheduled", "expired", "used_up", "disabled"] as const;
+
+/** `value`: percent (1 to 100) or Rial. `planCodes` empty means every plan. */
+export interface AdminCoupon {
+  id: string;
+  code: string;
+  description: string | null;
+  kind: string;
+  value: number;
+  planCodes: string[];
+  firstPurchaseOnly: boolean;
+  maxRedemptions: number | null;
+  maxPerWorkspace: number;
+  validFrom: string | null;
+  validUntil: string | null;
+  active: boolean;
+  state: string;
+  redemptions: number;
+  /** Rial. */
+  discountTotal: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CouponRedemption {
+  checkoutId: string;
+  workspaceId: string;
+  workspaceName: string | null;
+  discount: number;
+  invoiceNumber: number | null;
+  createdAt: string;
+}
+
+export interface AdminCouponDetail {
+  coupon: AdminCoupon;
+  redemptions: CouponRedemption[];
+}
+
+/** Everything but `code`, `kind` and `value` can change later. */
+export interface CouponRequest {
+  code?: string;
+  kind?: string;
+  value?: number;
+  description: string | null;
+  planCodes: string[];
+  firstPurchaseOnly: boolean;
+  maxRedemptions: number | null;
+  maxPerWorkspace: number;
+  validFrom: string | null;
+  validUntil: string | null;
+  active: boolean;
+}
+
+/** `kind`: top_up, adjustment, refund, checkout or released. `amount` is signed Money. */
+export interface WalletEntry {
+  id: string;
+  kind: string;
+  amount: Money;
+  balanceAfter: Money;
+  reason: string | null;
+  checkoutId: string | null;
+  actorKind: string;
+  createdAt: string;
+}
+
+export interface WalletInfo {
+  balance: Money;
+  entries: WalletEntry[];
 }
