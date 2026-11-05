@@ -10,6 +10,13 @@ function csrfToken(): string {
   return "";
 }
 
+let signingOut = false;
+
+/** Called by an explicit or idle sign-out: requests still in flight then fail quietly instead of redirecting to "session expired". */
+export function markSigningOut(): void {
+  signingOut = true;
+}
+
 export interface RequestOptions {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
@@ -41,7 +48,7 @@ export async function request<T>(url: string, options: RequestOptions = {}): Pro
   if (!response.ok) {
     const error = new ApiError(response.status, await readProblem(response));
     // A dead session anywhere but the sign-in screen sends the user back to it.
-    if (response.status === 401 && !url.startsWith("/api/auth/") && typeof window !== "undefined") {
+    if (response.status === 401 && !signingOut && !url.startsWith("/api/auth/") && typeof window !== "undefined") {
       const next = `${window.location.pathname}${window.location.search}`;
       // Full navigation on purpose: it drops every cached query of the dead session.
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination

@@ -25,6 +25,8 @@ export const PERMISSIONS = [
   "ai.read",
   "ai.manage",
   "ai.providers.manage",
+  "ai.traces.read",
+  "ai.traces.reveal",
   "content.read",
   "content.manage",
   "templates.read",
@@ -59,6 +61,8 @@ const ROLE_PERMISSIONS: Record<StaffRole, readonly Permission[]> = {
     "content.read",
     "templates.read",
     "files.quarantine",
+    "ai.traces.read",
+    "ai.traces.reveal",
     "platform.ops.read",
     "platform.dlq.payload",
     "flags.read",
@@ -66,8 +70,8 @@ const ROLE_PERMISSIONS: Record<StaffRole, readonly Permission[]> = {
   ],
   Finance: ["dashboard.read", "billing.read", "billing.refund", "plans.read", "plans.manage", "subscriptions.manage", "workspaces.read", "users.read", "platform.outage.read", "flags.read", "export"],
   ContentEditor: ["dashboard.read", "content.read", "content.manage"],
-  AIOps: ["dashboard.read", "ai.read", "ai.manage", "templates.read", "templates.manage", "platform.health.read", "platform.outage.read", "platform.ops.read", "flags.read"],
-  ReadOnly: ["dashboard.read", "platform.health.read", "platform.outage.read", "platform.ops.read", "flags.read", "workspaces.read", "users.read", "billing.read", "plans.read", "ai.read", "content.read", "templates.read"],
+  AIOps: ["dashboard.read", "ai.read", "ai.manage", "ai.traces.read", "ai.traces.reveal", "templates.read", "templates.manage", "platform.health.read", "platform.outage.read", "platform.ops.read", "flags.read"],
+  ReadOnly: ["dashboard.read", "platform.health.read", "platform.outage.read", "platform.ops.read", "flags.read", "workspaces.read", "users.read", "billing.read", "plans.read", "ai.read", "ai.traces.read", "content.read", "templates.read"],
 };
 
 export function isStaffRole(value: string): value is StaffRole {
@@ -87,7 +91,7 @@ export function can(roles: readonly string[], permission: Permission): boolean {
   return permissionsFor(roles).has(permission);
 }
 
-export type NavIcon = "home" | "staff" | "audit" | "health" | "settings" | "leads" | "support" | "workspaces" | "users" | "plans" | "aiProviders" | "aiRoutes" | "aiPrompts" | "aiEvals" | "contentEntries" | "contentCategories" | "contentRedirects" | "industryTemplates" | "outage" | "quarantine" | "kafka" | "deadLetters" | "workers" | "featureFlags";
+export type NavIcon = "home" | "staff" | "audit" | "health" | "settings" | "leads" | "support" | "workspaces" | "users" | "plans" | "aiProviders" | "aiRoutes" | "aiPrompts" | "aiEvals" | "contentEntries" | "contentCategories" | "contentRedirects" | "industryTemplates" | "outage" | "quarantine" | "kafka" | "deadLetters" | "workers" | "featureFlags" | "aiTraces";
 
 export interface NavItem {
   href: string;
@@ -110,6 +114,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/ai/routes", labelKey: "aiRoutes", icon: "aiRoutes", permission: "ai.read", section: "ai" },
   { href: "/ai/prompts", labelKey: "aiPrompts", icon: "aiPrompts", permission: "ai.read", section: "ai" },
   { href: "/ai/evals", labelKey: "aiEvals", icon: "aiEvals", permission: "ai.read", section: "ai" },
+  { href: "/ai/traces", labelKey: "aiTraces", icon: "aiTraces", permission: "ai.traces.read", section: "ai" },
   { href: "/templates/industry", labelKey: "industryTemplates", icon: "industryTemplates", permission: "templates.read", section: "templates" },
   { href: "/content/entries", labelKey: "contentEntries", icon: "contentEntries", permission: "content.read", section: "content" },
   { href: "/content/categories", labelKey: "contentCategories", icon: "contentCategories", permission: "content.read", section: "content" },

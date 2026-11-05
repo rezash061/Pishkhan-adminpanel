@@ -10,7 +10,7 @@ import { request } from "@/lib/api/client";
 import type { HealthReport } from "@/lib/api/types";
 import { formatJalaliDateTime, formatNumber } from "@/lib/format";
 
-type Health = HealthReport & { reachable: boolean; checkedAt: string };
+type Health = HealthReport & { reachable: boolean; full?: boolean; checkedAt: string };
 
 const tone = (status: string) => (status === "Healthy" ? "success" : status === "Degraded" ? "warning" : "danger");
 
@@ -56,6 +56,7 @@ export function HealthPanel() {
         <span className="text-sm text-muted-foreground">{t("checkedAt", { time: formatJalaliDateTime(data.checkedAt) })}</span>
       </div>
       {!data.reachable ? <Alert tone="danger">{t("unreachable")}</Alert> : null}
+      {data.reachable && !data.full ? <Alert tone="info">{t("pending")}</Alert> : null}
       {Object.keys(data.checks).length > 0 ? (
         <Card>
           <Table>
@@ -64,6 +65,7 @@ export function HealthPanel() {
                 <Th>{t("dependency")}</Th>
                 <Th>{t("status")}</Th>
                 <Th>{t("latency")}</Th>
+                {data.full ? <Th>{t("detail")}</Th> : null}
               </tr>
             </thead>
             <tbody>
@@ -74,6 +76,11 @@ export function HealthPanel() {
                     <StatusBadge status={check.status} />
                   </Td>
                   <Td>{t("ms", { ms: formatNumber(check.ms) })}</Td>
+                  {data.full ? (
+                    <Td className="max-w-96 truncate font-mono text-xs" dir="ltr" title={check.detail ?? undefined}>
+                      {check.detail ?? "—"}
+                    </Td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>

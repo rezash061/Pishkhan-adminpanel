@@ -1,8 +1,9 @@
 "use client";
 
-import { request } from "@/lib/api/client";
+import { markSigningOut, request } from "@/lib/api/client";
 
 export async function logout(reason: "idle" | "loggedOut"): Promise<void> {
+  markSigningOut();
   try {
     await request("/api/auth/logout", { method: "POST" });
   } finally {

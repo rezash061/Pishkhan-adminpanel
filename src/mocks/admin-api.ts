@@ -6,6 +6,7 @@
 import { handleAi, seedAi, type AiMockState } from "./ai";
 import { handleContent, seedContent, type ContentMockState } from "./content";
 import { handleOutage, seedOutage, type OutageMockState } from "./outage";
+import { handleOverview, seedOverview, type OverviewMockState } from "./overview";
 import { handlePlatform, seedPlatform, type PlatformMockState } from "./platform";
 import { handleTemplates, seedTemplates, type TemplatesMockState } from "./templates";
 import { auditFixtures, leadFixtures, planFixtures, userFixtures, workspaceFixtures, workspaceOwnerPhones } from "./fixtures";
@@ -24,10 +25,24 @@ interface MockStaff {
   status: "active" | "disabled";
   totpEnabled: boolean;
   createdAt: string;
+  lastActiveAt: string | null;
+  lockedUntil: string | null;
+}
+
+interface MockSession {
+  id: string;
+  username: string;
+  startedAt: string;
+  lastActiveAt: string;
+  expiresAt: string;
+  ip: string;
+  userAgent: string;
 }
 
 interface MockState {
   staff: MockStaff[];
+  /** Other sign-ins of each staff member for /me/sessions (the caller's current session is added on read). */
+  sessions: MockSession[];
   enrollments: Map<string, string>;
   revokedRefresh: Set<string>;
   /** Panel users changed by staff actions (status, sessions). */
@@ -39,6 +54,7 @@ interface MockState {
   templates: TemplatesMockState;
   outage: OutageMockState;
   platform: PlatformMockState;
+  overview: OverviewMockState;
 }
 
 interface MockSubscription {
@@ -65,6 +81,7 @@ const seed = (): MockState => ({
     staff("01938f5e-0000-7000-8000-000000000006", "newbie", ["Support"], false, "2026-10-28T07:00:00Z"),
     staff("01938f5e-0000-7000-8000-000000000007", "editor", ["ContentEditor"], true, "2026-10-09T09:00:00Z"),
   ],
+  sessions: mockSessions(),
   enrollments: new Map(),
   revokedRefresh: new Set(),
   users: structuredClone(userFixtures),
@@ -75,6 +92,7 @@ const seed = (): MockState => ({
   templates: seedTemplates(),
   outage: seedOutage(),
   platform: seedPlatform(),
+  overview: seedOverview(),
 });
 
 const DAY = 86_400_000;
@@ -127,7 +145,21 @@ function subscriptionInfo(s: MockSubscription) {
 }
 
 function staff(id: string, username: string, roles: string[], totpEnabled: boolean, createdAt: string): MockStaff {
-  return { id, username, password: PASSWORD, roles, status: "active", totpEnabled, createdAt };
+  return { id, username, password: PASSWORD, roles, status: "active", totpEnabled, createdAt, lastActiveAt: totpEnabled ? "2026-11-04T09:00:00Z" : null, lockedUntil: null };
+}
+
+function mockSessions(): MockSession[] {
+  const now = Date.now();
+  const at = (minutes: number) => new Date(now - minutes * 60_000).toISOString();
+  return ["superadmin", "support"].map((username, i) => ({
+    id: `01938f90-0000-7000-8000-00000000000${i + 1}`,
+    username,
+    startedAt: at(180),
+    lastActiveAt: at(20),
+    expiresAt: new Date(now + 10 * 60_000).toISOString(),
+    ip: "5.160.12.34",
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 Safari/605.1.15",
+  }));
 }
 
 // Shared across the separately bundled route handlers and the proxy in one Node process.
@@ -202,7 +234,51 @@ function userSummary(u: (typeof userFixtures)[number]) {
 }
 
 function summary(s: MockStaff) {
-  return { id: s.id, username: s.username, roles: s.roles, status: s.status, totpEnabled: s.totpEnabled, createdAt: s.createdAt };
+  return { id: s.id, username: s.username, roles: s.roles, status: s.status, totpEnabled: s.totpEnabled, createdAt: s.createdAt, lastActiveAt: s.lastActiveAt, lockedUntil: s.lockedUntil };
+}
+
+const reasonError = (reason: unknown) => {
+  const n = typeof reason === "string" ? reason.trim().length : 0;
+  return n < 5 ? "validation.too_short" : n > 300 ? "validation.too_long" : null;
+};
+
+/** `/admin/v1/staff/{id}/…` actions, with the backend's rules (SuperAdmin, step-up, reason, self and last SuperAdmin guards). */
+async function staffAction(request: Request, db: MockState, caller: Caller, id: string, action: string): Promise<Response> {
+  if (!isSuperAdmin(caller)) return problem(403, "auth.forbidden");
+  if (!caller.stepUpAt || Date.now() - caller.stepUpAt > 300_000) return problem(403, "auth.step_up.required");
+  const b = await body<{ reason: string; roles: string[] }>(request);
+  if (action === "roles") {
+    if (!b.roles?.length) return problem(400, "validation.failed", { roles: ["validation.required"] });
+    if (!b.roles.every((r) => ROLES.includes(r))) return problem(400, "validation.failed", { roles: ["validation.role.invalid"] });
+  }
+  const reason = reasonError(b.reason);
+  if (reason) return problem(400, "validation.failed", { reason: [reason] });
+  const target = db.staff.find((s) => s.id === id);
+  if (!target) return problem(404, "common.not_found");
+  const otherSuper = db.staff.some((s) => s.id !== id && s.status === "active" && s.roles.includes("SuperAdmin"));
+  switch (action) {
+    case "deactivate":
+      if (target.id === caller.user.id) return problem(409, "backoffice.staff.self");
+      if (target.roles.includes("SuperAdmin") && !otherSuper) return problem(409, "backoffice.staff.last_super_admin");
+      target.status = "disabled";
+      break;
+    case "activate":
+      target.status = "active";
+      target.lockedUntil = null;
+      break;
+    case "totp-reset":
+      if (target.id === caller.user.id) return problem(409, "backoffice.staff.self");
+      target.totpEnabled = false;
+      break;
+    case "roles":
+      if (target.roles.includes("SuperAdmin") && !b.roles!.includes("SuperAdmin") && target.status === "active" && !otherSuper) return problem(409, "backoffice.staff.last_super_admin");
+      target.roles = [...new Set(b.roles!)];
+      break;
+    default:
+      return problem(404, "common.not_found");
+  }
+  if (action !== "activate") db.sessions = db.sessions.filter((x) => x.username !== target.username);
+  return json(summary(target));
 }
 
 async function body<T>(request: Request): Promise<Partial<T>> {
@@ -281,6 +357,15 @@ export async function handleMockRequest(request: Request): Promise<Response> {
     case "GET /admin/v1/me":
       return json({ id: caller.user.id, username: caller.user.username, roles: caller.user.roles });
 
+    case "GET /admin/v1/me/sessions": {
+      const now = Date.now();
+      const current = { id: "01938f90-0000-7000-8000-0000000000ff", startedAt: new Date(now - 5 * 60_000).toISOString(), lastActiveAt: new Date(now).toISOString(), expiresAt: new Date(now + 15 * 60_000).toISOString(), ip: "127.0.0.1", userAgent: request.headers.get("user-agent"), current: true };
+      const others = db.sessions
+        .filter((x) => x.username === caller.user.username)
+        .map((x) => ({ id: x.id, startedAt: x.startedAt, lastActiveAt: x.lastActiveAt, expiresAt: x.expiresAt, ip: x.ip, userAgent: x.userAgent, current: false }));
+      return json([current, ...others]);
+    }
+
     case "GET /admin/v1/staff":
       if (!isSuperAdmin(caller)) return problem(403, "auth.forbidden");
       return json([...db.staff].sort((a, b) => a.username.localeCompare(b.username)).map(summary));
@@ -324,6 +409,23 @@ export async function handleMockRequest(request: Request): Promise<Response> {
       );
       return json({ items: filtered.slice((page - 1) * pageSize, page * pageSize), totalCount: filtered.length, page, pageSize });
     }
+  }
+
+  const sessionMatch = /^\/admin\/v1\/me\/sessions\/([^/]+)$/.exec(url.pathname);
+  if (sessionMatch && request.method === "DELETE") {
+    const before = db.sessions.length;
+    db.sessions = db.sessions.filter((x) => !(x.id === sessionMatch[1] && x.username === caller.user.username));
+    return before === db.sessions.length ? problem(404, "common.not_found") : new Response(null, { status: 204 });
+  }
+
+  const staffMatch = /^\/admin\/v1\/staff\/([^/]+)\/(deactivate|activate|totp-reset|roles)$/.exec(url.pathname);
+  if (staffMatch && ((request.method === "POST" && staffMatch[2] !== "roles") || (request.method === "PUT" && staffMatch[2] === "roles"))) {
+    return staffAction(request, db, caller, staffMatch[1]!, staffMatch[2]!);
+  }
+
+  if (url.pathname.startsWith("/admin/v1/ai/traces") || url.pathname === "/admin/v1/dashboard" || url.pathname === "/admin/v1/platform/health") {
+    const handled = await handleOverview(request, url, db.overview, db.platform, caller.user.roles, problem);
+    if (handled) return handled;
   }
 
   if (url.pathname.startsWith("/admin/v1/files/") || url.pathname.startsWith("/admin/v1/platform/") || url.pathname.startsWith("/admin/v1/feature-flags") || /\/feature-flags(\/|$)/.test(url.pathname)) {

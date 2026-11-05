@@ -148,6 +148,15 @@ generated client or copy of `admin.v1.json` in this repo); they match the PR's `
   (SuperAdmin; delete needs step-up), workspace overrides `GET /workspaces/{id}/feature-flags` and
   `PUT /workspaces/{id}/feature-flags/{key}` (Support, `{enabled: bool|null, reason}`).
 
+## 1l. Staff, traces, dashboard, health — backend PR #52 (second commit)
+
+- Staff: `POST /admin/v1/staff/{id}/deactivate`, `/activate`, `/totp-reset`, `PUT /staff/{id}/roles` (SuperAdmin, step-up, reason;
+  409 `backoffice.staff.self` and `backoffice.staff.last_super_admin`); `GET /me/sessions`, `DELETE /me/sessions/{id}`; staff rows
+  carry `lastActiveAt` and `lockedUntil`.
+- AI traces: `GET /admin/v1/ai/traces` (+ `/stats`, `/{id}`) without content; `POST /ai/traces/{id}/reveal` with a reason.
+- `GET /admin/v1/dashboard` (KPIs and alerts) and `GET /admin/v1/platform/health`.
+- Still open: recovery codes at TOTP enrollment (admin plan 2.2), and the Meta app page (app mode, permissions, webhook health).
+
 ## 2. Platform health
 
 The health page reads the AdminApi's own `/health/ready`, which today reports PostgreSQL and the two Redis
@@ -156,7 +165,7 @@ AI providers and the Meta API. Either add them as `ready`-tagged checks on the A
 they belong to other hosts) add `GET /admin/v1/platform/health` returning the same `{ status, checks }` shape
 with one entry per dependency. The panel already renders any check names it receives.
 
-## 3. Staff management (completes AD-0.2 / AD-2.7)
+## 3. Staff management (completes AD-0.2 / AD-2.7) — done in 1l except recovery codes
 
 - `POST /admin/v1/staff/{id}/deactivate` and `/activate` (SuperAdmin, step-up, `reason` in body).
 - `POST /admin/v1/staff/{id}/totp-reset` (SuperAdmin, step-up, `reason`): clears TOTP so the next sign-in re-enrolls.
