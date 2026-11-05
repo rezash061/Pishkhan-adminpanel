@@ -57,6 +57,7 @@ const ROLE_PERMISSIONS: Record<StaffRole, readonly Permission[]> = {
     "users.read",
     "users.manage",
     "leads.read",
+    "billing.read",
     "plans.read",
     "content.read",
     "templates.read",
@@ -91,7 +92,7 @@ export function can(roles: readonly string[], permission: Permission): boolean {
   return permissionsFor(roles).has(permission);
 }
 
-export type NavIcon = "home" | "staff" | "audit" | "health" | "settings" | "leads" | "support" | "workspaces" | "users" | "plans" | "aiProviders" | "aiRoutes" | "aiPrompts" | "aiEvals" | "contentEntries" | "contentCategories" | "contentRedirects" | "industryTemplates" | "outage" | "quarantine" | "kafka" | "deadLetters" | "workers" | "featureFlags" | "aiTraces";
+export type NavIcon = "home" | "staff" | "audit" | "health" | "settings" | "leads" | "support" | "workspaces" | "users" | "plans" | "aiProviders" | "aiRoutes" | "aiPrompts" | "aiEvals" | "contentEntries" | "contentCategories" | "contentRedirects" | "industryTemplates" | "outage" | "quarantine" | "kafka" | "deadLetters" | "workers" | "featureFlags" | "aiTraces" | "subscriptions" | "payments";
 
 export interface NavItem {
   href: string;
@@ -109,6 +110,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/users", labelKey: "users", icon: "users", permission: "users.read", section: "main" },
   { href: "/leads", labelKey: "leads", icon: "leads", permission: "leads.read", section: "main" },
   { href: "/support/sessions", labelKey: "supportSessions", icon: "support", permission: "workspaces.impersonate", section: "support" },
+  { href: "/billing/payments", labelKey: "payments", icon: "payments", permission: "billing.read", section: "billing" },
+  { href: "/billing/subscriptions", labelKey: "subscriptions", icon: "subscriptions", permission: "billing.read", section: "billing" },
   { href: "/billing/plans", labelKey: "plans", icon: "plans", permission: "plans.read", section: "billing" },
   { href: "/ai/providers", labelKey: "aiProviders", icon: "aiProviders", permission: "ai.read", section: "ai" },
   { href: "/ai/routes", labelKey: "aiRoutes", icon: "aiRoutes", permission: "ai.read", section: "ai" },

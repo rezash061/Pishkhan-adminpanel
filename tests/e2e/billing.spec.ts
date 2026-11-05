@@ -76,3 +76,44 @@ test("billing: Support sees plan and usage but cannot change them", async ({ pag
   await expect(page.getByRole("button", { name: "اعطای طرح" })).toHaveCount(0);
   await expectNoA11yViolations(page);
 });
+
+test("payments: summary, filters and a payment's invoice; Support cannot refund", async ({ page }) => {
+  await login(page, "support");
+  await page.goto("/billing/payments");
+  await expect(page.getByTestId("billing-summary")).toContainText("خالص");
+  await expect(page.getByTestId("payment-01938fb0-0000-7000-8000-000000000003")).toContainText("بخشی بازپرداخت شد");
+  await expectNoA11yViolations(page);
+  await page.getByRole("combobox", { name: "وضعیت" }).selectOption("failed");
+  await expect(page).toHaveURL(/status=failed/);
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+  await page.locator("tbody tr").first().getByRole("link").first().click();
+  await expect(page.getByTestId("payment-fields")).toContainText("ناموفق");
+  await expect(page.getByRole("button", { name: "ثبت بازپرداخت" })).toHaveCount(0);
+});
+
+test("payments: Finance records a refund that ends the subscription", async ({ page }) => {
+  await login(page, "finance");
+  await page.goto("/billing/payments/01938fb0-0000-7000-8000-000000000001");
+  await expect(page.getByRole("heading", { name: "فاکتور ۱۰۰۱" })).toBeVisible();
+  await page.getByRole("button", { name: "ثبت بازپرداخت" }).click();
+  const dialog = page.getByRole("dialog", { name: "ثبت بازپرداخت" });
+  await expect(dialog.getByLabel("مبلغ (تومان)")).toHaveValue("699000");
+  await dialog.getByLabel("مبلغ (تومان)").fill("800000");
+  await dialog.getByLabel("دلیل").fill("مشتری در روز اول انصراف داد");
+  await dialog.getByRole("button", { name: "ثبت بازپرداخت" }).click();
+  await expect(dialog.getByText(/مبلغی مثبت تا/)).toBeVisible();
+  await expectNoA11yViolations(page);
+  await dialog.getByLabel("مبلغ (تومان)").fill("۶۹۹٬۰۰۰");
+  await dialog.getByLabel("کد پیگیری بازپرداخت (اختیاری)").fill("R-9001");
+  await dialog.getByLabel("اشتراکی که با این پرداخت خریده شده پایان یابد").check();
+  await dialog.getByRole("button", { name: "ثبت بازپرداخت" }).click();
+  await confirmStepUp(page);
+  await expect(page.getByText("بازپرداخت ثبت شد.")).toBeVisible();
+  await expect(page.getByTestId("refunds")).toContainText("R-9001");
+  await expect(page.getByTestId("payment-fields")).toContainText("بازپرداخت شد");
+  await expect(page.getByRole("button", { name: "ثبت بازپرداخت" })).toHaveCount(0);
+
+  await page.goto("/billing/subscriptions?state=ended");
+  await expect(page.getByRole("cell", { name: /بازپرداخت شد/ })).toBeVisible();
+  await expectNoA11yViolations(page);
+});

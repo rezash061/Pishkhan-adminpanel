@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased — Billing: subscriptions, payments and invoices, refunds (AD-1.4)
+
+- Against backend PR #54 (see `docs/backend-requests.md` 1m):
+  - **Payments and invoices** (`/billing/payments`, SuperAdmin, Finance, Support, ReadOnly): the last 30 days' paid, refunded and net
+    totals; filters for status, kind and workspace in the URL; partly and fully refunded payments are marked.
+  - **Payment page** (`/billing/payments/{id}`): the invoice, credit from the previous plan, Zarinpal reference and card, the
+    subscription it bought and its refunds. Finance records a refund (amount in Toman up to what is left, optional Zarinpal
+    reference, reason, step-up) and can end the subscription with it.
+  - **Subscriptions** (`/billing/subscriptions`): every workspace's subscription by state, plan code and workspace, linked to the
+    payment that bought it.
+  - Support gains `billing.read`, as the backend allows. Workspace history shows the `refunded` end reason.
+
 ## Unreleased — Staff management, AI traces, home dashboard and full health page (AD-0.2, AD-0.4, AD-1.10)
 
 - Against backend PR #52 (see `docs/backend-requests.md` 1l):
