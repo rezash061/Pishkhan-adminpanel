@@ -18,6 +18,7 @@ import { ApiError } from "@/lib/problem";
 import { useErrorMessage } from "@/lib/use-error-message";
 import { channelLabel, ChannelStatusBadge, WorkspaceStatusBadge } from "../workspace-badges";
 import { WorkspaceBilling } from "./workspace-billing";
+import { WorkspaceFlags } from "./workspace-flags";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const actionClass = "inline-flex h-9 items-center gap-2 rounded-md border border-border bg-surface px-3 text-sm font-medium hover:bg-muted";
@@ -150,6 +151,8 @@ export function WorkspaceDetailView({ workspaceId }: { workspaceId: string }) {
       </div>
 
       <WorkspaceBilling workspaceId={w.id} deleted={w.status === "deleted"} />
+
+      <WorkspaceFlags workspaceId={w.id} />
 
       <Card>
         <CardHeader>

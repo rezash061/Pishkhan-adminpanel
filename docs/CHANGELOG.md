@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased — Platform operations: quarantine, Kafka, dead letters, workers, feature flags (AD-1.6 to AD-1.8)
+
+- New pages, against the backend's platform operations endpoints (see `docs/backend-requests.md` 1k):
+  - `/security/quarantine`: infected, failed, rejected and pending files with counts per status; re-scan, delete
+    (step-up) and "false positive" (SuperAdmin, step-up), each with a reason.
+  - `/platform/kafka`: consumer groups with lag (per topic and partition on click) and topics; refreshes every 15 s.
+  - `/platform/dead-letters` and `/platform/dead-letters/{id}`: open counts per group, a status filter, bulk replay or
+    discard (SuperAdmin, step-up, reason), and the payload and stack trace on the detail page.
+  - `/platform/workers`: Quartz instances, recurring jobs with "run now" (SuperAdmin, step-up) and worker groups.
+  - `/platform/feature-flags`: create, edit and delete global flags (rollout share, plans, switch); everyone else reads.
+- Workspace detail: a feature flags card with each flag's effective value and a per-workspace override
+  (Support and SuperAdmin, reason).
+- Shared `ReasonDialog` (reason plus optional step-up) and `Pager` components; `formatBytes`.
+- New permissions and nav items for the pages; mock AdminApi handlers with the backend's rules; unit and Playwright tests.
+
 ## Unreleased — Instagram outage mode (BE-2.7 part 1)
 
 - New "قطعی اینستاگرام" page in the Platform section (`/platform/outage`), from `GET/PUT /admin/v1/platform/outage`
