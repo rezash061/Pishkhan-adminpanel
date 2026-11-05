@@ -157,6 +157,14 @@ generated client or copy of `admin.v1.json` in this repo); they match the PR's `
 - `GET /admin/v1/dashboard` (KPIs and alerts) and `GET /admin/v1/platform/health`.
 - Still open: recovery codes at TOTP enrollment (admin plan 2.2), and the Meta app page (app mode, permissions, webhook health).
 
+## 1m. Billing across workspaces — backend PR #54 (third commit)
+
+- `GET /admin/v1/billing/subscriptions` (state current, trialing, scheduled, ended, all), `GET /billing/payments` (status paid, pending,
+  failed, expired, all; kind; workspace), `GET /billing/payments/{id}` (refunds and the subscription), `GET /billing/summary?days=`.
+- `POST /billing/payments/{id}/refunds` (Finance, step-up, reason): records a refund made in Zarinpal's panel, up to what is left;
+  `endSubscription` ends what the payment bought (end reason `refunded`).
+- Still open: coupons and the seller wallet (admin plan 4.4), waiting on Parsa's scope decision.
+
 ## 2. Platform health
 
 The health page reads the AdminApi's own `/health/ready`, which today reports PostgreSQL and the two Redis

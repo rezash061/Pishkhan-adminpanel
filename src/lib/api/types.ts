@@ -869,3 +869,82 @@ export interface DashboardResponse {
   kpis: DashboardKpis;
   alerts: DashboardAlert[];
 }
+
+// Billing across workspaces (`/admin/v1/billing`, backend PR #54). Amounts in Rial.
+
+export const SUBSCRIPTION_STATES = ["current", "trialing", "scheduled", "ended", "all"] as const;
+export const PAYMENT_STATUSES = ["paid", "pending", "failed", "expired", "all"] as const;
+export const CHECKOUT_KINDS = ["new", "renewal", "upgrade", "downgrade"] as const;
+
+/** A subscription as the billing endpoints return it: `state` active, trialing, scheduled, expired or ended. */
+export interface BillingSubscription extends SubscriptionInfo {
+  cycle: string | null;
+  checkoutId: string | null;
+}
+
+export interface AdminSubscriptionRow {
+  subscription: BillingSubscription;
+  workspaceId: string;
+  workspaceName: string | null;
+}
+
+/** A Zarinpal checkout and its invoice once paid. `refunded` is the sum of its refunds. `status`: pending, paid, failed or expired. */
+export interface AdminPayment {
+  id: string;
+  workspaceId: string;
+  workspaceName: string | null;
+  kind: string;
+  planCode: string;
+  planName: string;
+  planVersion: number;
+  cycle: string | null;
+  price: number;
+  credit: number;
+  amount: number;
+  refunded: number;
+  status: string;
+  referenceId: string | null;
+  cardMask: string | null;
+  error: string | null;
+  invoiceNumber: number | null;
+  subscriptionId: string | null;
+  createdAt: string;
+  paidAt: string | null;
+}
+
+export interface AdminRefund {
+  id: string;
+  checkoutId: string;
+  amount: number;
+  reason: string;
+  referenceId: string | null;
+  endedSubscription: boolean;
+  /** Staff username. */
+  createdBy: string | null;
+  createdAt: string;
+}
+
+export interface AdminPaymentDetail {
+  payment: AdminPayment;
+  refunds: AdminRefund[];
+  subscription: BillingSubscription | null;
+}
+
+/** `POST /admin/v1/billing/payments/{id}/refunds` (Finance, step-up): records money paid back in Zarinpal's panel. */
+export interface RefundRequest {
+  amount: number;
+  reason: string;
+  referenceId?: string | null;
+  endSubscription: boolean;
+}
+
+export interface BillingSummary {
+  days: number;
+  paidCount: number;
+  paidAmount: number;
+  refundCount: number;
+  refundedAmount: number;
+  netAmount: number;
+  failedCount: number;
+  pendingCount: number;
+}

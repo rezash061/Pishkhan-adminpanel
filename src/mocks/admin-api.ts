@@ -6,6 +6,7 @@
 import { handleAi, seedAi, type AiMockState } from "./ai";
 import { handleContent, seedContent, type ContentMockState } from "./content";
 import { handleOutage, seedOutage, type OutageMockState } from "./outage";
+import { handleBilling, seedBilling, type BillingMockState } from "./billing";
 import { handleOverview, seedOverview, type OverviewMockState } from "./overview";
 import { handlePlatform, seedPlatform, type PlatformMockState } from "./platform";
 import { handleTemplates, seedTemplates, type TemplatesMockState } from "./templates";
@@ -55,6 +56,7 @@ interface MockState {
   outage: OutageMockState;
   platform: PlatformMockState;
   overview: OverviewMockState;
+  billing: BillingMockState;
 }
 
 interface MockSubscription {
@@ -69,31 +71,37 @@ interface MockSubscription {
   endsAt: string | null;
   endedAt: string | null;
   endReason: string | null;
+  cycle?: string | null;
+  checkoutId?: string | null;
 }
 
-const seed = (): MockState => ({
-  staff: [
-    staff("01938f5e-0000-7000-8000-000000000001", "superadmin", ["SuperAdmin"], true, "2026-10-01T08:00:00Z"),
-    staff("01938f5e-0000-7000-8000-000000000002", "support", ["Support"], true, "2026-10-05T09:30:00Z"),
-    staff("01938f5e-0000-7000-8000-000000000003", "finance", ["Finance"], true, "2026-10-06T10:00:00Z"),
-    staff("01938f5e-0000-7000-8000-000000000004", "aiops", ["AIOps"], true, "2026-10-07T11:00:00Z"),
-    staff("01938f5e-0000-7000-8000-000000000005", "readonly", ["ReadOnly"], true, "2026-10-08T12:00:00Z"),
-    staff("01938f5e-0000-7000-8000-000000000006", "newbie", ["Support"], false, "2026-10-28T07:00:00Z"),
-    staff("01938f5e-0000-7000-8000-000000000007", "editor", ["ContentEditor"], true, "2026-10-09T09:00:00Z"),
-  ],
-  sessions: mockSessions(),
-  enrollments: new Map(),
-  revokedRefresh: new Set(),
-  users: structuredClone(userFixtures),
-  plans: structuredClone(planFixtures),
-  subscriptions: seedSubscriptions(),
-  ai: seedAi(),
-  content: seedContent(),
-  templates: seedTemplates(),
-  outage: seedOutage(),
-  platform: seedPlatform(),
-  overview: seedOverview(),
-});
+const seed = (): MockState => {
+  const subscriptions = seedSubscriptions();
+  return {
+    staff: [
+      staff("01938f5e-0000-7000-8000-000000000001", "superadmin", ["SuperAdmin"], true, "2026-10-01T08:00:00Z"),
+      staff("01938f5e-0000-7000-8000-000000000002", "support", ["Support"], true, "2026-10-05T09:30:00Z"),
+      staff("01938f5e-0000-7000-8000-000000000003", "finance", ["Finance"], true, "2026-10-06T10:00:00Z"),
+      staff("01938f5e-0000-7000-8000-000000000004", "aiops", ["AIOps"], true, "2026-10-07T11:00:00Z"),
+      staff("01938f5e-0000-7000-8000-000000000005", "readonly", ["ReadOnly"], true, "2026-10-08T12:00:00Z"),
+      staff("01938f5e-0000-7000-8000-000000000006", "newbie", ["Support"], false, "2026-10-28T07:00:00Z"),
+      staff("01938f5e-0000-7000-8000-000000000007", "editor", ["ContentEditor"], true, "2026-10-09T09:00:00Z"),
+    ],
+    sessions: mockSessions(),
+    enrollments: new Map(),
+    revokedRefresh: new Set(),
+    users: structuredClone(userFixtures),
+    plans: structuredClone(planFixtures),
+    subscriptions,
+    ai: seedAi(),
+    content: seedContent(),
+    templates: seedTemplates(),
+    outage: seedOutage(),
+    platform: seedPlatform(),
+    overview: seedOverview(),
+    billing: seedBilling(subscriptions),
+  };
+};
 
 const DAY = 86_400_000;
 
@@ -425,6 +433,12 @@ export async function handleMockRequest(request: Request): Promise<Response> {
 
   if (url.pathname.startsWith("/admin/v1/ai/traces") || url.pathname === "/admin/v1/dashboard" || url.pathname === "/admin/v1/platform/health") {
     const handled = await handleOverview(request, url, db.overview, db.platform, caller.user.roles, problem);
+    if (handled) return handled;
+  }
+
+  if (url.pathname.startsWith("/admin/v1/billing/")) {
+    const fresh = !!caller.stepUpAt && Date.now() - caller.stepUpAt <= 300_000;
+    const handled = await handleBilling(request, url, db.billing, db.subscriptions, caller.user, fresh, problem);
     if (handled) return handled;
   }
 
