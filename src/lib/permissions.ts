@@ -21,6 +21,8 @@ export const PERMISSIONS = [
   "plans.read",
   "plans.manage",
   "subscriptions.manage",
+  "coupons.manage",
+  "wallet.adjust",
   "billing.refund",
   "ai.read",
   "ai.manage",
@@ -69,7 +71,7 @@ const ROLE_PERMISSIONS: Record<StaffRole, readonly Permission[]> = {
     "flags.read",
     "flags.override",
   ],
-  Finance: ["dashboard.read", "billing.read", "billing.refund", "plans.read", "plans.manage", "subscriptions.manage", "workspaces.read", "users.read", "platform.outage.read", "flags.read", "export"],
+  Finance: ["dashboard.read", "billing.read", "billing.refund", "coupons.manage", "wallet.adjust", "plans.read", "plans.manage", "subscriptions.manage", "workspaces.read", "users.read", "platform.outage.read", "flags.read", "export"],
   ContentEditor: ["dashboard.read", "content.read", "content.manage"],
   AIOps: ["dashboard.read", "ai.read", "ai.manage", "ai.traces.read", "ai.traces.reveal", "templates.read", "templates.manage", "platform.health.read", "platform.outage.read", "platform.ops.read", "flags.read"],
   ReadOnly: ["dashboard.read", "platform.health.read", "platform.outage.read", "platform.ops.read", "flags.read", "workspaces.read", "users.read", "billing.read", "plans.read", "ai.read", "ai.traces.read", "content.read", "templates.read"],
@@ -92,7 +94,7 @@ export function can(roles: readonly string[], permission: Permission): boolean {
   return permissionsFor(roles).has(permission);
 }
 
-export type NavIcon = "home" | "staff" | "audit" | "health" | "settings" | "leads" | "support" | "workspaces" | "users" | "plans" | "aiProviders" | "aiRoutes" | "aiPrompts" | "aiEvals" | "contentEntries" | "contentCategories" | "contentRedirects" | "industryTemplates" | "outage" | "quarantine" | "kafka" | "deadLetters" | "workers" | "featureFlags" | "aiTraces" | "subscriptions" | "payments";
+export type NavIcon = "home" | "staff" | "audit" | "health" | "settings" | "leads" | "support" | "workspaces" | "users" | "plans" | "aiProviders" | "aiRoutes" | "aiPrompts" | "aiEvals" | "contentEntries" | "contentCategories" | "contentRedirects" | "industryTemplates" | "outage" | "quarantine" | "kafka" | "deadLetters" | "workers" | "featureFlags" | "aiTraces" | "subscriptions" | "payments" | "coupons";
 
 export interface NavItem {
   href: string;
@@ -112,6 +114,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/support/sessions", labelKey: "supportSessions", icon: "support", permission: "workspaces.impersonate", section: "support" },
   { href: "/billing/payments", labelKey: "payments", icon: "payments", permission: "billing.read", section: "billing" },
   { href: "/billing/subscriptions", labelKey: "subscriptions", icon: "subscriptions", permission: "billing.read", section: "billing" },
+  { href: "/billing/coupons", labelKey: "coupons", icon: "coupons", permission: "billing.read", section: "billing" },
   { href: "/billing/plans", labelKey: "plans", icon: "plans", permission: "plans.read", section: "billing" },
   { href: "/ai/providers", labelKey: "aiProviders", icon: "aiProviders", permission: "ai.read", section: "ai" },
   { href: "/ai/routes", labelKey: "aiRoutes", icon: "aiRoutes", permission: "ai.read", section: "ai" },

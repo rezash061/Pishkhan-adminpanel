@@ -101,7 +101,7 @@ test("payments: Finance records a refund that ends the subscription", async ({ p
   await dialog.getByLabel("مبلغ (تومان)").fill("800000");
   await dialog.getByLabel("دلیل").fill("مشتری در روز اول انصراف داد");
   await dialog.getByRole("button", { name: "ثبت بازپرداخت" }).click();
-  await expect(dialog.getByText(/مبلغی مثبت تا/)).toBeVisible();
+  await expect(dialog.getByText(/مبلغی از ۰ تا/)).toBeVisible();
   await expectNoA11yViolations(page);
   await dialog.getByLabel("مبلغ (تومان)").fill("۶۹۹٬۰۰۰");
   await dialog.getByLabel("کد پیگیری بازپرداخت (اختیاری)").fill("R-9001");
@@ -116,4 +116,67 @@ test("payments: Finance records a refund that ends the subscription", async ({ p
   await page.goto("/billing/subscriptions?state=ended");
   await expect(page.getByRole("cell", { name: /بازپرداخت شد/ })).toBeVisible();
   await expectNoA11yViolations(page);
+});
+
+test("coupons: Finance creates one and edits its limits; ReadOnly only looks", async ({ page }) => {
+  await login(page, "finance");
+  await page.goto("/billing/coupons");
+  await expect(page.getByTestId("coupon-NOWRUZ")).toContainText("۱۰٪");
+  await expectNoA11yViolations(page);
+  await page.getByRole("link", { name: "کد تازه" }).click();
+  await page.getByLabel("کد", { exact: true }).fill("yalda-1405");
+  await page.getByLabel("نوع").selectOption("fixed");
+  await page.getByLabel("مبلغ (تومان)").fill("۵۰۰۰۰");
+  await page.getByLabel("کد طرح‌ها").fill("pro");
+  await page.getByLabel("فقط برای اولین خرید فروشگاه").check();
+  await expectNoA11yViolations(page);
+  await page.getByRole("button", { name: "ساخت کد" }).click();
+  await expect(page.getByRole("heading", { name: "YALDA-1405" })).toBeVisible();
+  await expect(page.getByTestId("coupon-summary")).toContainText("۵۰٬۰۰۰ تومان");
+  await page.getByLabel("حداکثر استفادهٔ کل").fill("100");
+  await page.getByLabel("فعال باشد").uncheck();
+  await page.getByRole("button", { name: "ذخیره" }).click();
+  await expect(page.getByText("ذخیره شد.")).toBeVisible();
+  await expect(page.getByTestId("coupon-summary")).toContainText("خاموش");
+
+  await page.goto("/billing/coupons/01938fb2-0000-7000-8000-000000000001");
+  await expect(page.getByTestId("coupon-redemptions")).toContainText("۱۰۰۳");
+
+  await page.context().clearCookies();
+  await login(page, "readonly");
+  await page.goto("/billing/coupons");
+  await expect(page.getByRole("link", { name: "کد تازه" })).toHaveCount(0);
+  await page.getByRole("link", { name: "NOWRUZ" }).click();
+  await expect(page.getByRole("button", { name: "ذخیره" })).toHaveCount(0);
+});
+
+test("wallet: Finance adds credit on the workspace page; a refund goes to the wallet", async ({ page }) => {
+  await login(page, "finance");
+  await page.goto("/workspaces/01938f61-0000-7000-8000-00000000b004");
+  const wallet = page.getByTestId("workspace-wallet");
+  await expect(wallet.getByTestId("wallet-balance")).toHaveText("۱۰۰٬۰۰۰ تومان");
+  await wallet.getByRole("button", { name: "افزایش یا کسر" }).click();
+  const dialog = page.getByRole("dialog", { name: "تغییر موجودی کیف پول" });
+  await dialog.getByLabel("کسر").check();
+  await dialog.getByLabel("مبلغ (تومان)").fill("200000");
+  await dialog.getByLabel("دلیل").fill("اصلاح خطای ثبت");
+  await dialog.getByRole("button", { name: "افزایش یا کسر" }).click();
+  await confirmStepUp(page);
+  await expect(dialog.getByText("موجودی کیف پول برای این کسر کافی نیست.")).toBeVisible();
+  await expectNoA11yViolations(page);
+  await dialog.getByLabel("افزایش").check();
+  await dialog.getByRole("button", { name: "افزایش یا کسر" }).click();
+  await expect(page.getByText("موجودی کیف پول تغییر کرد.")).toBeVisible();
+  await expect(wallet.getByTestId("wallet-balance")).toHaveText("۳۰۰٬۰۰۰ تومان");
+
+  await page.goto("/billing/payments/01938fb0-0000-7000-8000-000000000003");
+  await expect(page.getByTestId("payment-fields")).toContainText("NOWRUZ");
+  await page.getByRole("button", { name: "ثبت بازپرداخت" }).click();
+  const refund = page.getByRole("dialog", { name: "ثبت بازپرداخت" });
+  await refund.getByLabel("مبلغ (تومان)").fill("100000");
+  await refund.getByLabel("به جای زرین‌پال، به کیف پول فروشنده واریز شود").check();
+  await expect(refund.getByLabel("کد پیگیری بازپرداخت (اختیاری)")).toHaveCount(0);
+  await refund.getByLabel("دلیل").fill("جبران به کیف پول");
+  await refund.getByRole("button", { name: "ثبت بازپرداخت" }).click();
+  await expect(page.getByTestId("refunds")).toContainText("به کیف پول");
 });

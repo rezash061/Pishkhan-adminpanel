@@ -163,7 +163,8 @@ generated client or copy of `admin.v1.json` in this repo); they match the PR's `
   failed, expired, all; kind; workspace), `GET /billing/payments/{id}` (refunds and the subscription), `GET /billing/summary?days=`.
 - `POST /billing/payments/{id}/refunds` (Finance, step-up, reason): records a refund made in Zarinpal's panel, up to what is left;
   `endSubscription` ends what the payment bought (end reason `refunded`).
-- Still open: coupons and the seller wallet (admin plan 4.4), waiting on Parsa's scope decision.
+- Coupons and the seller wallet: backend PR #55 (`/admin/v1/billing/coupons`, `/admin/v1/workspaces/{id}/wallet` and `/wallet/adjustments`,
+  refunds with `toWallet`).
 
 ## 2. Platform health
 
