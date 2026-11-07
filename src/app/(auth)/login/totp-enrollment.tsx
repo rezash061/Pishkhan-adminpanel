@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { RecoveryCodesList } from "@/components/console/recovery-codes";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,8 +19,10 @@ export interface Enrollment {
 }
 
 /** First sign-in: the backend issued a TOTP secret; show it once and confirm a code to start the session. */
-export function TotpEnrollment({ enrollment, onDone, onCancel }: { enrollment: Enrollment; onDone: () => void; onCancel: () => void }) {
+export function TotpEnrollment({ enrollment, username, onDone, onCancel }: { enrollment: Enrollment; username: string; onDone: () => void; onCancel: () => void }) {
   const t = useTranslations("enroll");
+  const [codes, setCodes] = useState<string[] | null>(null);
+  const [saved, setSaved] = useState(false);
   const errorMessage = useErrorMessage();
   const [qr, setQr] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -33,12 +36,35 @@ export function TotpEnrollment({ enrollment, onDone, onCancel }: { enrollment: E
   const onSubmit = handleSubmit(async ({ code }) => {
     setError(null);
     try {
-      await request("/api/auth/totp-enroll", { method: "POST", body: { code: toLatinDigits(code.trim()) } });
-      onDone();
+      const result = await request<{ status: "ok"; recoveryCodes?: string[] }>("/api/auth/totp-enroll", { method: "POST", body: { code: toLatinDigits(code.trim()) } });
+      if (result.recoveryCodes?.length) setCodes(result.recoveryCodes);
+      else onDone();
     } catch (e) {
       setError(errorMessage(e));
     }
   });
+
+  if (codes) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("codesTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <p className="text-sm">{t("codesIntro")}</p>
+          <RecoveryCodesList codes={codes} username={username} />
+          <Alert tone="warning">{t("codesWarning")}</Alert>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={saved} onChange={(e) => setSaved(e.target.checked)} className="size-4" />
+            {t("codesSaved")}
+          </label>
+          <Button disabled={!saved} onClick={onDone}>
+            {t("codesContinue")}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const grouped = enrollment.totpSecret.replace(/(.{4})/g, "$1 ").trim();
 

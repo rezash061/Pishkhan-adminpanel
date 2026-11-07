@@ -30,6 +30,8 @@ interface MockStaff {
   createdAt: string;
   lastActiveAt: string | null;
   lockedUntil: string | null;
+  /** Unused recovery codes, normalized (lowercase, no dash). */
+  recoveryCodes?: string[];
 }
 
 interface MockSession {
@@ -205,6 +207,30 @@ function random(): string {
 }
 
 // Tokens are self-describing so any bundle can validate them: mock.at.<username>.<expiresAt>[.su.<stepUpAt>]
+const RECOVERY_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
+const normalizeRecovery = (code: string) => code.toLowerCase().replace(/[-\s]/g, "");
+
+/** Ten codes like the backend's (`xxxxx-xxxxx`); the mock keeps them normalized. */
+function newRecoveryCodes(user: MockStaff): string[] {
+  const codes = Array.from({ length: 10 }, () => {
+    const bytes = crypto.getRandomValues(new Uint8Array(10));
+    const raw = Array.from(bytes, (b) => RECOVERY_ALPHABET[b % RECOVERY_ALPHABET.length]).join("");
+    return `${raw.slice(0, 5)}-${raw.slice(5)}`;
+  });
+  user.recoveryCodes = codes.map(normalizeRecovery);
+  return codes;
+}
+
+/** A TOTP code, or a recovery code (used up on the first use). */
+function acceptsSecondFactor(user: MockStaff, code: string): boolean {
+  if (code === TOTP_CODE) return true;
+  const n = normalizeRecovery(code);
+  const i = n.length === 10 ? (user.recoveryCodes ?? []).indexOf(n) : -1;
+  if (i < 0) return false;
+  user.recoveryCodes!.splice(i, 1);
+  return true;
+}
+
 function issue(user: MockStaff) {
   const now = Date.now();
   const accessExp = now + accessTtlSeconds() * 1000;
@@ -326,7 +352,7 @@ export async function handleMockRequest(request: Request): Promise<Response> {
         return json({ status: "totp_enrollment_required", enrollmentToken, totpSecret: MOCK_SECRET, otpAuthUri: `otpauth://totp/Pishkhan%20Admin:${user.username}?secret=${MOCK_SECRET}&issuer=Pishkhan%20Admin` });
       }
       if (!b.totpCode) return problem(401, "auth.totp.required");
-      if (b.totpCode !== TOTP_CODE) return problem(401, "auth.totp.invalid");
+      if (!acceptsSecondFactor(user, b.totpCode)) return problem(401, "auth.totp.invalid");
       return json(issue(user));
     }
 
@@ -338,7 +364,7 @@ export async function handleMockRequest(request: Request): Promise<Response> {
       db.enrollments.delete(b.enrollmentToken!);
       const user = db.staff.find((s) => s.username === username)!;
       user.totpEnabled = true;
-      return json(issue(user));
+      return json({ ...issue(user), recoveryCodes: newRecoveryCodes(user) });
     }
 
     case "POST /admin/v1/auth/refresh": {
@@ -369,7 +395,12 @@ export async function handleMockRequest(request: Request): Promise<Response> {
     }
 
     case "GET /admin/v1/me":
-      return json({ id: caller.user.id, username: caller.user.username, roles: caller.user.roles });
+      return json({ id: caller.user.id, username: caller.user.username, roles: caller.user.roles, recoveryCodesLeft: caller.user.recoveryCodes?.length ?? 0 });
+
+    case "POST /admin/v1/me/recovery-codes":
+      if (!caller.stepUpAt || Date.now() - caller.stepUpAt > 300_000) return problem(403, "auth.step_up.required");
+      if (!caller.user.totpEnabled) return problem(409, "backoffice.totp.not_enabled");
+      return json({ codes: newRecoveryCodes(caller.user) });
 
     case "GET /admin/v1/me/sessions": {
       const now = Date.now();

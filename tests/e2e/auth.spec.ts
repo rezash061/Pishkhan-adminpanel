@@ -54,7 +54,46 @@ test("first sign-in enrolls TOTP before the session starts", async ({ page }) =>
 
   await page.getByLabel("کد ۶ رقمی برنامه").fill(TOTP);
   await page.getByRole("button", { name: "تأیید و ورود" }).click();
+
+  // Ten one-time recovery codes, shown once; the session starts after the staff member says they saved them.
+  await expect(page.getByRole("heading", { name: "کدهای بازیابی" })).toBeVisible();
+  const codes = await page.getByTestId("recovery-codes").locator("li").allTextContents();
+  expect(codes).toHaveLength(10);
+  codes.forEach((c) => expect(c).toMatch(/^[a-z2-9]{5}-[a-z2-9]{5}$/));
+  await expectNoA11yViolations(page);
+  const go = page.getByRole("button", { name: "ورود به پنل" });
+  await expect(go).toBeDisabled();
+  await page.getByLabel("کدها را در جای امنی ذخیره کردم.").check();
+  await go.click();
   await expect(page.getByRole("heading", { name: "خوش آمدید، newbie" })).toBeVisible();
+
+  // A recovery code signs in once, in place of the TOTP code.
+  for (const [attempt, ok] of [[1, true], [2, false]] as const) {
+    await page.context().clearCookies();
+    await page.goto("/login");
+    await page.getByLabel("نام کاربری").fill("newbie");
+    await page.getByLabel("رمز عبور").fill(PASSWORD);
+    await page.getByLabel("کد تأیید دومرحله‌ای").fill(codes[0]!.toUpperCase());
+    await page.getByRole("button", { name: "ورود" }).click();
+    if (ok) await expect(page.getByRole("heading", { name: "خوش آمدید، newbie" }), `attempt ${attempt}`).toBeVisible();
+    else await expect(page.getByText("کد تأیید نادرست یا منقضی است.")).toBeVisible();
+  }
+
+  // Settings: nine left; new codes after step-up replace them all.
+  await page.getByLabel("کد تأیید دومرحله‌ای").fill(TOTP);
+  await page.getByRole("button", { name: "ورود" }).click();
+  await expect(page.getByRole("heading", { name: "خوش آمدید، newbie" })).toBeVisible();
+  await page.goto("/settings");
+  await expect(page.getByTestId("recovery-codes-left")).toHaveText("۹ کد بازیابی باقی مانده است.");
+  await page.getByRole("button", { name: "گرفتن کدهای تازه" }).click();
+  await page.getByRole("button", { name: "گرفتن کدهای تازه" }).click();
+  const stepUp = page.getByRole("dialog", { name: "تأیید دوباره هویت" });
+  await stepUp.getByLabel("رمز عبور").fill(PASSWORD);
+  await stepUp.getByLabel("کد دومرحله‌ای").fill(TOTP);
+  await stepUp.getByRole("button", { name: "تأیید و ادامه" }).click();
+  await expect(page.getByText("کدهای تازه ساخته شد.", { exact: false })).toBeVisible();
+  await expect(page.getByTestId("recovery-codes").locator("li")).toHaveCount(10);
+  await expect(page.getByTestId("recovery-codes-left")).toHaveText("۱۰ کد بازیابی باقی مانده است.");
 });
 
 test("an expired access token is refreshed transparently", async ({ page, context }) => {
