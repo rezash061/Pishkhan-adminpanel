@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased — Support tickets, announcements, SMS and Bale (AD-2.4, AD-2.6)
+
+- Against backend PR (batch 4, see `docs/backend-requests.md` 1n):
+  - **Support tickets** (`/support/tickets`, SuperAdmin, Support, ReadOnly): queue tabs (waiting, answered, mine, unassigned, closed,
+    all) with counts, category and subject/number search in the URL. A ticket page shows the conversation; Support answers (the
+    seller is notified and the ticket is taken if nobody had it), takes or releases it, closes and reopens it.
+  - **Announcements** (`/support/announcements`): the banner every seller sees. Support writes them with severity, optional link and
+    show window, ends or deletes them.
+  - **SMS and Bale** (`/platform/messaging`): SMS provider, API key set or not, remaining credit and the last day's sent/failed by
+    purpose; a test SMS (SuperAdmin, step-up); Bale webhook settings and sellers' bots, with a token check that registers the
+    webhook again or marks the bot for reconnection (Support).
+  - **SMS log** (`/platform/sms-log`): every SMS sent or failed for 90 days, masked phone, purpose, workspace and error; search by
+    phone. Texts are never kept.
+  - New permissions `tickets.read`, `tickets.manage`, `announcements.manage`, `platform.messaging.read`, `platform.sms.test`,
+    `platform.bale.check`.
+
 ## Unreleased — Coupons and wallets (AD-1.4)
 
 - Against backend PR #55 (see `docs/backend-requests.md` 1m):

@@ -6,6 +6,8 @@
 import { handleAi, seedAi, type AiMockState } from "./ai";
 import { handleContent, seedContent, type ContentMockState } from "./content";
 import { handleOutage, seedOutage, type OutageMockState } from "./outage";
+import { handleMessaging, seedMessaging, type MessagingMockState } from "./messaging";
+import { handleSupport, seedSupport, type SupportMockState } from "./support";
 import { handleBilling, seedBilling, type BillingMockState } from "./billing";
 import { handleOverview, seedOverview, type OverviewMockState } from "./overview";
 import { handlePlatform, seedPlatform, type PlatformMockState } from "./platform";
@@ -57,6 +59,8 @@ interface MockState {
   platform: PlatformMockState;
   overview: OverviewMockState;
   billing: BillingMockState;
+  support: SupportMockState;
+  messaging: MessagingMockState;
 }
 
 interface MockSubscription {
@@ -100,6 +104,8 @@ const seed = (): MockState => {
     platform: seedPlatform(),
     overview: seedOverview(),
     billing: seedBilling(subscriptions),
+    support: seedSupport(),
+    messaging: seedMessaging(),
   };
 };
 
@@ -697,6 +703,18 @@ export async function handleMockRequest(request: Request): Promise<Response> {
 
   if (url.pathname.startsWith("/admin/v1/content/")) {
     const handled = await handleContent(request, url, db.content, caller.user.roles, problem);
+    if (handled) return handled;
+  }
+
+  if (url.pathname.startsWith("/admin/v1/support/tickets") || url.pathname.startsWith("/admin/v1/announcements")) {
+    const staffName = (id: string) => db.staff.find((m) => m.id === id)?.username ?? null;
+    const handled = await handleSupport(request, url, db.support, { id: caller.user.id, username: caller.user.username, roles: caller.user.roles }, staffName, problem);
+    if (handled) return handled;
+  }
+
+  if (url.pathname === "/admin/v1/platform/messaging" || url.pathname.startsWith("/admin/v1/platform/sms/") || url.pathname.startsWith("/admin/v1/platform/bale/")) {
+    const fresh = !!caller.stepUpAt && Date.now() - caller.stepUpAt <= 300_000;
+    const handled = await handleMessaging(request, url, db.messaging, caller.user.roles, fresh, problem);
     if (handled) return handled;
   }
 
