@@ -99,3 +99,19 @@ test("messaging: provider state, SMS log by phone, test SMS with step-up, Bale b
   await page.getByLabel("نتیجه").selectOption("failed");
   await expect(page.getByTestId("sms-row")).toHaveCount(0);
 });
+
+test("meta app: settings without secrets, webhook results and accounts by status", async ({ page }) => {
+  await login(page, "readonly", "/platform/meta-app");
+  await expect(page.getByRole("heading", { name: "اپ متا (اینستاگرام)" })).toBeVisible();
+  await expect(page.getByTestId("meta-settings")).toContainText("v23.0");
+  await expect(page.getByTestId("meta-settings")).toContainText("تنظیم شده");
+  await expect(page.getByTestId("webhook-accepted")).toContainText("۱۸٬۲۴۰");
+  await expect(page.getByTestId("meta-webhooks")).toContainText("۴ وب‌هوک رد شد.");
+  await expect(page.getByTestId("meta-accounts")).toContainText("توکن ۲ حساب در ۱۰ روز آینده منقضی می‌شود.");
+  await expectNoA11yViolations(page);
+
+  await page.context().clearCookies();
+  await login(page, "finance");
+  await page.goto("/platform/meta-app");
+  await expect(page.getByTestId("forbidden")).toBeVisible();
+});

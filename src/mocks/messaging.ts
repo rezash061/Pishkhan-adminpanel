@@ -1,6 +1,6 @@
 // Mock state and handler for /admin/v1/platform/messaging, /platform/sms and /platform/bale (backend AD-2.4). Used by src/mocks/admin-api.ts.
 
-import type { AdminBaleBot, MessagingOverview, SmsLogItem } from "@/lib/api/types";
+import type { AdminBaleBot, MessagingOverview, MetaApp, SmsLogItem } from "@/lib/api/types";
 import { workspaceFixtures } from "./fixtures";
 
 const READERS = ["SuperAdmin", "Support", "ReadOnly"];
@@ -95,6 +95,25 @@ export async function handleMessaging(request: Request, url: URL, s: MessagingMo
       bale: { apiBaseUrl: "https://tapi.bale.ai", webhookBaseUrl: "https://api.pishkhan.ir", webhookSecretSet: true, bots },
     };
     return Response.json(overview);
+  }
+
+  if (path === "/admin/v1/platform/meta-app" && request.method === "GET") {
+    if (!read) return problem(403, "auth.forbidden");
+    const ago = (m: number) => new Date(Date.now() - m * MINUTE).toISOString();
+    const meta: MetaApp = {
+      appId: "1234567890123456",
+      apiVersion: "v23.0",
+      graphBaseUrl: "https://graph.instagram.com",
+      redirectUri: "https://app.pishkhan.ir/channels/instagram/callback",
+      appSecretSet: true,
+      webhookVerifyTokenSet: true,
+      scopes: ["instagram_business_basic", "instagram_business_manage_messages", "instagram_business_manage_comments"],
+      webhookFields: ["messages", "messaging_postbacks", "messaging_seen", "comments"],
+      webhooks: { last24Hours: { accepted: 18_240, duplicate: 312, ignored: 95, bad_signature: 4 }, lastSeen: { accepted: ago(1), duplicate: ago(12), ignored: ago(40), bad_signature: ago(300) } },
+      accounts: { active: 6, token_expiring: 1, reauth_required: 1 },
+      tokensExpiringSoon: 2,
+    };
+    return Response.json(meta);
   }
 
   if (path === "/admin/v1/platform/sms/log" && request.method === "GET") {

@@ -743,7 +743,7 @@ export async function handleMockRequest(request: Request): Promise<Response> {
     if (handled) return handled;
   }
 
-  if (url.pathname === "/admin/v1/platform/messaging" || url.pathname.startsWith("/admin/v1/platform/sms/") || url.pathname.startsWith("/admin/v1/platform/bale/")) {
+  if (url.pathname === "/admin/v1/platform/messaging" || url.pathname === "/admin/v1/platform/meta-app" || url.pathname.startsWith("/admin/v1/platform/sms/") || url.pathname.startsWith("/admin/v1/platform/bale/")) {
     const fresh = !!caller.stepUpAt && Date.now() - caller.stepUpAt <= 300_000;
     const handled = await handleMessaging(request, url, db.messaging, caller.user.roles, fresh, problem);
     if (handled) return handled;

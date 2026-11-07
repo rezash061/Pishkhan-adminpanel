@@ -11,6 +11,11 @@
   - **SMS and Bale** (`/platform/messaging`): SMS provider, API key set or not, remaining credit and the last day's sent/failed by
     purpose; a test SMS (SuperAdmin, step-up); Bale webhook settings and sellers' bots, with a token check that registers the
     webhook again or marks the bot for reconnection (Support).
+  - **Meta app** (`/platform/meta-app`): the Instagram app's id, Graph version, redirect URI, scopes and webhook fields (secrets only
+    as set or not), webhook deliveries by result over the last day with a warning when some were rejected, and Instagram accounts
+    by status with tokens expiring in 10 days.
+  - **Recovery codes** (AD-0.2): ten one-time codes after TOTP enrollment (copy or download, then continue), accepted at sign-in in
+    place of the TOTP code; settings shows how many are left and replaces them after step-up.
   - **SMS log** (`/platform/sms-log`): every SMS sent or failed for 90 days, masked phone, purpose, workspace and error; search by
     phone. Texts are never kept.
   - New permissions `tickets.read`, `tickets.manage`, `announcements.manage`, `platform.messaging.read`, `platform.sms.test`,

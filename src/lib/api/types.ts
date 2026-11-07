@@ -1158,3 +1158,20 @@ export interface BaleCheckResult {
   bot: AdminBaleBot;
   result: string;
 }
+
+/** GET /admin/v1/platform/meta-app: the Meta app's settings (secrets only as set or not), webhook deliveries and accounts. */
+export interface MetaApp {
+  appId: string;
+  apiVersion: string;
+  graphBaseUrl: string;
+  redirectUri: string;
+  appSecretSet: boolean;
+  webhookVerifyTokenSet: boolean;
+  scopes: string[];
+  webhookFields: string[];
+  /** Deliveries by result over the last 24 hours (accepted, duplicate, ignored, bad_signature, bad_json, too_large, produce_failed), and when each was last seen. */
+  webhooks: { last24Hours: Record<string, number>; lastSeen: Record<string, string> };
+  /** Instagram accounts by status. */
+  accounts: Record<string, number>;
+  tokensExpiringSoon: number;
+}

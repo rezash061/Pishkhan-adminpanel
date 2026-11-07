@@ -105,7 +105,7 @@ export function can(roles: readonly string[], permission: Permission): boolean {
   return permissionsFor(roles).has(permission);
 }
 
-export type NavIcon = "home" | "staff" | "audit" | "health" | "settings" | "leads" | "support" | "workspaces" | "users" | "plans" | "aiProviders" | "aiRoutes" | "aiPrompts" | "aiEvals" | "contentEntries" | "contentCategories" | "contentRedirects" | "industryTemplates" | "outage" | "quarantine" | "kafka" | "deadLetters" | "workers" | "featureFlags" | "aiTraces" | "subscriptions" | "payments" | "coupons" | "tickets" | "announcements" | "messaging" | "smsLog";
+export type NavIcon = "home" | "staff" | "audit" | "health" | "settings" | "leads" | "support" | "workspaces" | "users" | "plans" | "aiProviders" | "aiRoutes" | "aiPrompts" | "aiEvals" | "contentEntries" | "contentCategories" | "contentRedirects" | "industryTemplates" | "outage" | "quarantine" | "kafka" | "deadLetters" | "workers" | "featureFlags" | "aiTraces" | "subscriptions" | "payments" | "coupons" | "tickets" | "announcements" | "messaging" | "smsLog" | "metaApp";
 
 export interface NavItem {
   href: string;
@@ -145,6 +145,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/platform/outage", labelKey: "outage", icon: "outage", permission: "platform.outage.read", section: "platform" },
   { href: "/platform/messaging", labelKey: "messaging", icon: "messaging", permission: "platform.messaging.read", section: "platform" },
   { href: "/platform/sms-log", labelKey: "smsLog", icon: "smsLog", permission: "platform.messaging.read", section: "platform" },
+  { href: "/platform/meta-app", labelKey: "metaApp", icon: "metaApp", permission: "platform.messaging.read", section: "platform" },
   { href: "/platform/kafka", labelKey: "kafka", icon: "kafka", permission: "platform.ops.read", section: "platform" },
   { href: "/platform/dead-letters", labelKey: "deadLetters", icon: "deadLetters", permission: "platform.ops.read", section: "platform" },
   { href: "/platform/workers", labelKey: "workers", icon: "workers", permission: "platform.ops.read", section: "platform" },
