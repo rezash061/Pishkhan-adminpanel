@@ -166,6 +166,15 @@ generated client or copy of `admin.v1.json` in this repo); they match the PR's `
 - Coupons and the seller wallet: backend PR #55 (`/admin/v1/billing/coupons`, `/admin/v1/workspaces/{id}/wallet` and `/wallet/adjustments`,
   refunds with `toWallet`).
 
+## 1n. Support tickets, announcements, SMS and Bale — backend batch 4
+
+- `GET /admin/v1/support/tickets` (status, category, assigned me|none, workspaceId, q), `/counts`, `/{id}`, `POST /{id}/messages`,
+  `/assign` (`staffId` or null), `/close`, `/reopen`. Readers SuperAdmin, Support, ReadOnly; changes Support.
+- `GET|POST /admin/v1/announcements`, `PUT|DELETE /{id}`, `POST /{id}/end`.
+- `GET /admin/v1/platform/messaging`, `GET /platform/sms/log` (phone, purpose, status, workspaceId), `POST /platform/sms/test`
+  (SuperAdmin, step-up), `GET /platform/bale/bots`, `POST /platform/bale/bots/{id}/check` (Support).
+- Provider keys stay in deployment configuration; the panel only shows whether they are set.
+
 ## 2. Platform health
 
 The health page reads the AdminApi's own `/health/ready`, which today reports PostgreSQL and the two Redis

@@ -19,6 +19,7 @@ interface LoginResponse extends Partial<SessionTokens> {
   enrollmentToken?: string | null;
   totpSecret?: string | null;
   otpAuthUri?: string | null;
+  recoveryCodes?: string[] | null;
 }
 
 async function readJson(request: Request): Promise<Record<string, unknown>> {
@@ -50,7 +51,8 @@ async function sessionStarted(response: Response): Promise<Response> {
   }
   writeSessionCookies(jar, body as SessionTokens);
   jar.delete(cookieNames().enroll);
-  return NextResponse.json({ status: "ok" });
+  // Recovery codes come once, right after TOTP enrollment; the browser shows them and nothing stores them.
+  return NextResponse.json(body.recoveryCodes?.length ? { status: "ok", recoveryCodes: body.recoveryCodes } : { status: "ok" });
 }
 
 export async function POST(request: Request, ctx: RouteContext<"/api/auth/[action]">) {

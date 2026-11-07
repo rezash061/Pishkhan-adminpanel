@@ -1033,3 +1033,145 @@ export interface WalletInfo {
   balance: Money;
   entries: WalletEntry[];
 }
+
+// Support tickets and announcements (backend /admin/v1/support/tickets, /admin/v1/announcements; AD-2.6).
+
+export const TICKET_STATUSES = ["open", "answered", "closed"] as const;
+export const TICKET_CATEGORIES = ["billing", "technical", "instagram", "ai", "other"] as const;
+
+/** `status` open (waiting on Pishkhan), answered (waiting on the seller) or closed. `lastMessageBy` seller or staff. */
+export interface AdminTicket {
+  id: string;
+  number: number;
+  workspaceId: string;
+  workspaceName: string | null;
+  subject: string;
+  category: string;
+  status: string;
+  lastMessageBy: string;
+  messageCount: number;
+  assignedTo: string | null;
+  assignedToName: string | null;
+  createdBy: string;
+  lastMessageAt: string;
+  createdAt: string;
+  closedAt: string | null;
+}
+
+export interface AdminTicketMessage {
+  id: string;
+  authorKind: "seller" | "staff" | string;
+  authorId: string;
+  authorName: string | null;
+  body: string;
+  createdAt: string;
+}
+
+export interface AdminTicketDetail {
+  ticket: AdminTicket;
+  messages: AdminTicketMessage[];
+}
+
+export interface TicketCounts {
+  open: number;
+  answered: number;
+  closed: number;
+  unassigned: number;
+  mine: number;
+}
+
+export const ANNOUNCEMENT_SEVERITIES = ["info", "warning", "critical"] as const;
+export const ANNOUNCEMENT_STATES = ["scheduled", "active", "ended"] as const;
+
+export interface AdminAnnouncement {
+  id: string;
+  title: string;
+  body: string | null;
+  severity: string;
+  link: string | null;
+  startsAt: string;
+  endsAt: string | null;
+  state: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** `startsAt` null means now. */
+export interface AnnouncementRequest {
+  title: string;
+  body: string | null;
+  severity: string;
+  link: string | null;
+  startsAt: string | null;
+  endsAt: string | null;
+}
+
+// SMS provider, SMS log and Bale bots (backend /admin/v1/platform/messaging, /sms, /bale; AD-2.4).
+
+export const SMS_PURPOSES = ["otp", "invitation", "notification", "campaign", "test", "other"] as const;
+
+export interface SmsProviderStatus {
+  provider: string;
+  configured: boolean;
+  otpTemplate: string | null;
+  /** Rial, when the provider reports it. */
+  credit: number | null;
+  error: string | null;
+}
+
+export interface MessagingOverview {
+  sms: { provider: SmsProviderStatus; last24Hours: { sent: number; failed: number; byPurpose: Record<string, number> } };
+  bale: { apiBaseUrl: string; webhookBaseUrl: string; webhookSecretSet: boolean; bots: Record<string, number> };
+}
+
+/** The text is never kept; `phone` is masked. */
+export interface SmsLogItem {
+  id: string;
+  createdAt: string;
+  purpose: string;
+  workspaceId: string | null;
+  workspaceName: string | null;
+  phone: string;
+  provider: string;
+  status: "sent" | "failed" | string;
+  error: string | null;
+  segments: number;
+  template: string | null;
+}
+
+export interface AdminBaleBot {
+  id: string;
+  workspaceId: string;
+  workspaceName: string | null;
+  botId: string;
+  username: string | null;
+  displayName: string | null;
+  status: string;
+  statusReason: string | null;
+  statusChangedAt: string | null;
+  createdAt: string;
+}
+
+/** `result`: ok, invalid_token or unavailable. */
+export interface BaleCheckResult {
+  bot: AdminBaleBot;
+  result: string;
+}
+
+/** GET /admin/v1/platform/meta-app: the Meta app's settings (secrets only as set or not), webhook deliveries and accounts. */
+export interface MetaApp {
+  appId: string;
+  apiVersion: string;
+  graphBaseUrl: string;
+  redirectUri: string;
+  appSecretSet: boolean;
+  webhookVerifyTokenSet: boolean;
+  scopes: string[];
+  webhookFields: string[];
+  /** Deliveries by result over the last 24 hours (accepted, duplicate, ignored, bad_signature, bad_json, too_large, produce_failed), and when each was last seen. */
+  webhooks: { last24Hours: Record<string, number>; lastSeen: Record<string, string> };
+  /** Instagram accounts by status. */
+  accounts: Record<string, number>;
+  tokensExpiringSoon: number;
+}

@@ -27,6 +27,7 @@ export function LoginForm({ next, reason }: { next: string; reason: "expired" | 
   const errorMessage = useErrorMessage();
   const [error, setError] = useState<string | null>(null);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
+  const [username, setUsername] = useState("");
   const { register, handleSubmit, formState, setFocus } = useForm<LoginValues>({ defaultValues: { username: "", password: "", totpCode: "" } });
 
   const finish = () => window.location.assign(next);
@@ -39,14 +40,17 @@ export function LoginForm({ next, reason }: { next: string; reason: "expired" | 
         body: { username: values.username.trim(), password: values.password, totpCode: toLatinDigits(values.totpCode.trim()) },
       });
       if (result.status === "ok") finish();
-      else setEnrollment(result);
+      else {
+        setUsername(values.username.trim().toLowerCase());
+        setEnrollment(result);
+      }
     } catch (e) {
       setError(errorMessage(e));
       if (e instanceof ApiError && e.code?.startsWith("auth.totp")) setFocus("totpCode");
     }
   });
 
-  if (enrollment) return <TotpEnrollment enrollment={enrollment} onDone={finish} onCancel={() => setEnrollment(null)} />;
+  if (enrollment) return <TotpEnrollment enrollment={enrollment} username={username} onDone={finish} onCancel={() => setEnrollment(null)} />;
 
   return (
     <Card>
@@ -82,10 +86,11 @@ export function LoginForm({ next, reason }: { next: string; reason: "expired" | 
               <Input
                 id={id}
                 dir="ltr"
-                inputMode="numeric"
                 autoComplete="one-time-code"
-                maxLength={6}
-                className="tracking-[0.4em]"
+                autoCapitalize="none"
+                spellCheck={false}
+                maxLength={11}
+                className="tracking-[0.3em]"
                 aria-describedby={describedBy}
                 {...register("totpCode")}
               />
